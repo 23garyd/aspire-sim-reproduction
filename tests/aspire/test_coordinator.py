@@ -3,7 +3,7 @@ import pytest
 from aspire.actors import FakeActor, FakeJudge
 from aspire.config import RunConfig
 from aspire.coordinator import TaskPipeline, ValidationReuseError
-from aspire.engines import AuditedEngine, FakeEngine
+from aspire.engines import AuditedEngine, EngineError, FakeEngine
 from aspire.schemas import ActorReport, ExecuteResult, ProposedSkill
 from aspire.skill_library import SkillLibrary
 
@@ -288,6 +288,34 @@ def test_winner_bundle_from_evosearch_winner(tmp_path):
     w = task / "winner"
     assert (w / "trace.json").exists()          # sourced from evosearch_best_trace.json
     assert (w / "validation_trace.json").exists()
+
+
+def test_baseline_immediate_win_persists_winner_bundle(tmp_path):
+    from aspire.schemas import TraceRecord
+    task = _task(tmp_path)
+    ok_tr = TraceRecord(step=1, function="grasp_object", args={}, status="ok",
+                        result_summary="clean_baseline_win", duration_ms=1.0, media=[])
+    engine = FakeEngine([ExecuteResult(1.0, traces=[ok_tr]), ExecuteResult(0.9)])
+    lib = SkillLibrary(tmp_path / "lib")
+    TaskPipeline(task, engine, FakeActor(), FakeJudge([]), lib, CFG).run()
+    assert "clean_baseline_win" in (task / "winner" / "trace.json").read_text()
+    assert (task / "winner" / "validation_trace.json").exists()
+
+
+def test_winner_debug_bundle_written_before_validation(tmp_path):
+    from aspire.schemas import TraceRecord
+    task = _task(tmp_path)
+    tr = TraceRecord(step=1, function="f", args={}, status="ok",
+                     result_summary="pre_val_evidence", duration_ms=1.0, media=[])
+    # engine exhausts ON the S_val call -> validate raises EngineError
+    engine = FakeEngine([ExecuteResult(1.0, traces=[tr])])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, FakeActor(), FakeJudge([]), lib, CFG)
+    with pytest.raises(EngineError):
+        pipe.run()
+    # debug-winner bundle already on disk despite validation never completing
+    assert "pre_val_evidence" in (task / "winner" / "trace.json").read_text()
+    assert not (task / "VALIDATION_DONE").exists()
 
 
 def test_admission_passes_similar_skills_to_judge(tmp_path):

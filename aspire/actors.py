@@ -22,7 +22,7 @@ class ActorError(RuntimeError):
 class ProposeContext:
     task_dir: Path
     iter_dir: Path
-    top3: list                 # list[tuple[program_path, score]] best-first
+    top3: list                 # list[tuple[program_path, score, trace_summary]] best-first
     skills: list               # list[Skill] injected by coordinator
     k: int = 3
     history_note: str = ""     # short summary of eliminated/blocked branches

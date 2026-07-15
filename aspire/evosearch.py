@@ -44,11 +44,14 @@ _LEDGER_HEADER = (
 
 def failure_note(history, max_lines=10) -> str:
     """Newest-to-oldest, dedup the "[error]" lines out of each history entry's trace
-    summary. Empty when there are none — this becomes ProposeContext.history_note."""
+    summary. Audit-rejection lines are excluded (they live in the ledger; this note is
+    runtime failure modes only). Empty when none — becomes ProposeContext.history_note."""
     lines = []
     for entry in reversed(history):
         summary = entry[2] if len(entry) > 2 else ""
         for line in summary.splitlines():
+            if ": audit [error]" in line:
+                continue
             if "[error]" in line and line not in lines:
                 lines.append(line)
                 if len(lines) >= max_lines:
@@ -71,7 +74,8 @@ def _append_ledger(run_dir: Path, i: int, entries: list) -> None:
     header = f"## iter_{i:02d}"
     ledger_path = run_dir / "task_analysis.md"
     existing = ledger_path.read_text() if ledger_path.exists() else _LEDGER_HEADER
-    if header in existing:
+    # newline-anchored: "## iter_10" must not match inside "## iter_100"
+    if f"\n{header}\n" in f"\n{existing}":
         return
     lines = [header]
     for e in entries:

@@ -109,6 +109,18 @@ def test_history_note_collects_deduped_error_lines():
     assert failure_note([("a", 1.0, "step 1: x [ok] fine\nFAILURES: 0")]) == ""
 
 
+def test_failure_note_excludes_audit_lines():
+    from aspire.evosearch import failure_note
+    from aspire.task_context import summarize_traces
+    # audit rejections live in the ledger; history_note is runtime failures only
+    audit_only = summarize_traces([_fail_tr("forbidden qpos access", step=0, fn="audit")])
+    assert failure_note([("a", 0.0, audit_only)]) == ""
+    mixed = summarize_traces([_fail_tr("forbidden qpos access", step=0, fn="audit"),
+                              _fail_tr("PLANNING_ERROR near table")])
+    note = failure_note([("a", 0.0, mixed)])
+    assert "PLANNING_ERROR" in note and "audit" not in note
+
+
 def test_candidate_bundles_and_ledger_written(tmp_path):
     task = _task(tmp_path)
     engine = FakeEngine([

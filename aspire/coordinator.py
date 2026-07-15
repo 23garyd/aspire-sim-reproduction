@@ -64,6 +64,15 @@ class TaskPipeline:
                 "S_val possibly spent; manual review required")
         _atomic_write(started, json.dumps({"program": str(program)}))
         result = self.engine.execute(program, self.cfg.s_val)
+        # G3 invariant: VALIDATION_DONE exists => winner/ is complete. The validation
+        # bundle lands BEFORE the DONE marker; a crash in between leaves STARTED,
+        # which taints on resume (no silent loss).
+        winner_dir = self.task_dir / "winner"
+        winner_dir.mkdir(exist_ok=True)
+        _atomic_write(winner_dir / "validation_trace.json",
+                     json.dumps([t.to_dict() for t in result.traces], indent=1))
+        _atomic_write(winner_dir / "validation_summary.txt",
+                     summarize_traces(result.traces))
         _atomic_write(marker, json.dumps({"program": str(program),
                                           "score": result.score,
                                           "dbg_score": dbg_score}))
@@ -125,10 +134,10 @@ class TaskPipeline:
                 dbg_score, program = best.score, best.path
                 winning_result = None   # evosearch persists its own bundle at task level
 
-        val = self.validate(program, dbg_score)             # Stage 2, exactly once
-
-        # G3 binding: persist the validated winner's trace bundle so a later phase
-        # (ExtractValidatedPatterns) can read it — it exists only in memory otherwise.
+        # G3 binding: persist the debug-winner's trace bundle BEFORE validation so a
+        # later phase (ExtractValidatedPatterns) can read it; validate() adds the
+        # validation bundle before committing VALIDATION_DONE, so DONE => winner/
+        # complete. It exists only in memory otherwise.
         winner_dir = self.task_dir / "winner"
         winner_dir.mkdir(exist_ok=True)
         if winning_result is not None:
@@ -143,9 +152,8 @@ class TaskPipeline:
             srcsum = self.task_dir / "evosearch_best_summary.txt"
             _atomic_write(winner_dir / "summary.txt",
                          srcsum.read_text() if srcsum.exists() else "(unavailable)")
-        _atomic_write(winner_dir / "validation_trace.json",
-                     json.dumps([t.to_dict() for t in val.traces], indent=1))
-        _atomic_write(winner_dir / "validation_summary.txt", summarize_traces(val.traces))
+
+        val = self.validate(program, dbg_score)             # Stage 2, exactly once
 
         admitted = []
         if report is not None:
