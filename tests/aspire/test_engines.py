@@ -107,3 +107,16 @@ def test_audited_engine_blocks_seed_branch(tmp_path):
 def test_audited_engine_missing_program_raises(tmp_path):
     with pytest.raises(EngineError, match="cannot read"):
         AuditedEngine(FakeEngine([])).execute(tmp_path / "ghost.py", [0])
+
+
+def test_audited_engine_clears_stale_marker_on_clean_rewrite(tmp_path):
+    prog = tmp_path / "fix_code.py"
+    prog.write_text("q = env.handle.env.sim.data.qpos")
+    eng = AuditedEngine(FakeEngine([ER(0.8)]))
+    eng.execute(prog, [0])                                    # rejected, marker written
+    marker = prog.with_suffix(prog.suffix + ".AUDIT_REJECTED")
+    assert marker.exists()
+    prog.write_text("navigate_to_pose([1, 2, 0.5])")          # clean rewrite, same path
+    res = eng.execute(prog, [0])
+    assert res.score == 0.8
+    assert not marker.exists(), "stale marker must be cleared on clean execution"

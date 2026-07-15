@@ -184,6 +184,18 @@ def test_cheating_fix_scores_zero_and_never_executes(tmp_path):
     assert result.val_score == 0.9
 
 
+def test_validate_blocks_cheating_program(tmp_path):
+    task = _task(tmp_path)
+    cheat = task / "cheat.py"
+    cheat.write_text("if seed == 100:\n    return_success()")
+    engine = AuditedEngine(FakeEngine([]))    # any real execution would raise
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, FakeActor(), FakeJudge([]), lib, CFG)
+    result = pipe.validate(cheat)
+    assert result.score == 0.0
+    assert (task / "cheat.py.AUDIT_REJECTED").exists()
+
+
 def test_admission_passes_similar_skills_to_judge(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)

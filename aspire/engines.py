@@ -48,6 +48,8 @@ class AuditedEngine:
             raise EngineError(f"cannot read program for audit: {e}") from e
         violations = audit_code(text)
         if not violations:
+            # clear stale marker: fix_code.py is rewritten in place each round
+            program.with_suffix(program.suffix + ".AUDIT_REJECTED").unlink(missing_ok=True)
             return self._inner.execute(program, seeds)
         marker = program.with_suffix(program.suffix + ".AUDIT_REJECTED")
         marker.write_text("\n".join(violations))

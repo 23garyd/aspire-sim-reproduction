@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Protocol
 
 from aspire.schemas import ActorReport, ProposedSkill, ReportError
-from aspire.skill_library import render_skill
+from aspire.skill_library import Skill, render_skill
 
 _CAND_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -137,8 +137,11 @@ class ClaudeJudge:
         self._model, self._timeout = model, timeout_s
 
     def admit(self, skill: ProposedSkill, existing=()) -> bool:
+        # render the candidate like-for-like with existing entries (markdown)
+        candidate_md = render_skill(
+            Skill.from_proposed(skill, provenance="(candidate, not yet admitted)"))
         prompt = (Path(self._prompt_file).read_text()
-                  + "\n\n## Candidate skill\n" + str(skill.to_dict()))
+                  + "\n\n## Candidate skill\n" + candidate_md)
         if existing:
             prompt += ("\n\n## Existing library entries (reject near-duplicates)\n"
                       + "\n---\n".join(render_skill(s) for s in existing))
