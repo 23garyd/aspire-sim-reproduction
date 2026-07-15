@@ -250,6 +250,46 @@ def test_second_debug_round_context_reflects_first_fix_failure(tmp_path):
     assert "GRIPPER_SLIP" in (task / "traces" / "summary.txt").read_text()
 
 
+def test_winner_bundle_persisted_for_extraction(tmp_path):
+    from aspire.schemas import TraceRecord
+    task = _task(tmp_path)
+    fix_trace = TraceRecord(step=1, function="grasp_object", args={}, status="ok",
+                            result_summary="in_hand=True", duration_ms=1.0, media=[])
+    val_trace = TraceRecord(step=1, function="grasp_object", args={}, status="ok",
+                            result_summary="validated_grasp", duration_ms=1.0, media=[])
+    engine = FakeEngine([ExecuteResult(0.0),                       # Stage 0
+                         ExecuteResult(1.0, traces=[fix_trace]),   # fix wins
+                         ExecuteResult(0.9, traces=[val_trace])])  # S_val
+    (task / "fix_code.py").write_text("clean_fix()")
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+                        FakeJudge([True]), lib, CFG)
+    pipe.run()
+    w = task / "winner"
+    assert "in_hand=True" in (w / "trace.json").read_text()
+    assert "validated_grasp" in (w / "validation_trace.json").read_text()
+    assert "FAILURES: 0" in (w / "summary.txt").read_text()
+
+
+def test_winner_bundle_from_evosearch_winner(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0),                 # Stage 0
+                         ExecuteResult(0.2),                 # debug fix
+                         ExecuteResult(0.0),                 # evosearch baseline
+                         ExecuteResult(1.0), ExecuteResult(0.3),  # candidates
+                         ExecuteResult(0.8)])                # S_val
+    (task / "fix_code.py").write_text("still_bad()")
+    actor = FakeActor(reports=[ActorReport(outcome="fail", diagnosis="d",
+                                           code_path="fix_code.py")],
+                      candidate_sources=[["good", "meh"]])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([]), lib, CFG)
+    pipe.run()
+    w = task / "winner"
+    assert (w / "trace.json").exists()          # sourced from evosearch_best_trace.json
+    assert (w / "validation_trace.json").exists()
+
+
 def test_admission_passes_similar_skills_to_judge(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)

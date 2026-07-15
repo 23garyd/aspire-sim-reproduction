@@ -16,8 +16,9 @@ from aspire.audit import audit_code
 from aspire.config import RunConfig
 from aspire.evosearch import evosearch
 from aspire.skill_library import Skill, SkillLibrary
-from aspire.task_context import (relevant_skills, write_execution_context,
-                                 write_skills_context, write_task_metadata)
+from aspire.task_context import (relevant_skills, summarize_traces,
+                                 write_execution_context, write_skills_context,
+                                 write_task_metadata)
 
 
 class ValidationReuseError(RuntimeError):
@@ -96,6 +97,7 @@ class TaskPipeline:
         r = self.engine.execute(baseline, self.cfg.s_dbg)
         dbg_score, program, report = r.score, baseline, None
         latest = r
+        winning_result = r          # bundle of the program currently in the lead
         write_execution_context(self.task_dir, r)
         write_task_metadata(self.task_dir, task_language=self.task_language)
 
@@ -109,6 +111,7 @@ class TaskPipeline:
                 latest = r
                 if r.score > dbg_score:
                     dbg_score, program = r.score, fix
+                    winning_result = r
                 if dbg_score >= self.cfg.theta:
                     break
                 write_execution_context(self.task_dir, r)   # refresh for next round
@@ -120,8 +123,29 @@ class TaskPipeline:
             # disk-checkpointed, so prefer it on ties for resumability.
             if best.score >= dbg_score:
                 dbg_score, program = best.score, best.path
+                winning_result = None   # evosearch persists its own bundle at task level
 
         val = self.validate(program, dbg_score)             # Stage 2, exactly once
+
+        # G3 binding: persist the validated winner's trace bundle so a later phase
+        # (ExtractValidatedPatterns) can read it — it exists only in memory otherwise.
+        winner_dir = self.task_dir / "winner"
+        winner_dir.mkdir(exist_ok=True)
+        if winning_result is not None:
+            _atomic_write(winner_dir / "trace.json",
+                         json.dumps([t.to_dict() for t in winning_result.traces], indent=1))
+            _atomic_write(winner_dir / "summary.txt",
+                         summarize_traces(winning_result.traces))
+        else:                        # evosearch winner: bundle persisted at task level
+            src = self.task_dir / "evosearch_best_trace.json"
+            _atomic_write(winner_dir / "trace.json",
+                         src.read_text() if src.exists() else "[]")
+            srcsum = self.task_dir / "evosearch_best_summary.txt"
+            _atomic_write(winner_dir / "summary.txt",
+                         srcsum.read_text() if srcsum.exists() else "(unavailable)")
+        _atomic_write(winner_dir / "validation_trace.json",
+                     json.dumps([t.to_dict() for t in val.traces], indent=1))
+        _atomic_write(winner_dir / "validation_summary.txt", summarize_traces(val.traces))
 
         admitted = []
         if report is not None:
