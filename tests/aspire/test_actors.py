@@ -35,7 +35,8 @@ def _make_shim(tmp_path, body):
 
 def test_claude_actor_invokes_cli_and_loads_report(tmp_path, monkeypatch):
     task = tmp_path / "task"; task.mkdir()
-    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    prompt = tmp_path / "p.md"
+    prompt.write_text("do the thing PROMPT_SENTINEL_XYZ")
     bin_dir = _make_shim(
         tmp_path,
         'echo "$@" > cli_args.txt\n'
@@ -46,6 +47,7 @@ def test_claude_actor_invokes_cli_and_loads_report(tmp_path, monkeypatch):
     assert rep.outcome == "success"
     args = (task / "cli_args.txt").read_text()
     assert "--model opus" in args and "-p" in args
+    assert "PROMPT_SENTINEL_XYZ" in args
 
 
 def test_claude_actor_no_report_raises(tmp_path, monkeypatch):
@@ -67,3 +69,80 @@ def test_fake_judge_and_claude_judge_parse(tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
     assert ClaudeJudge(prompt_file=str(prompt),
                        workdir=tmp_path).admit(skill) is True
+
+
+def _skill():
+    return ProposedSkill(name="n", category="c", failure_signature="f",
+                         when_to_apply="w", strategy="s")
+
+
+def test_claude_judge_no_with_yes_in_justification(tmp_path, monkeypatch):
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(
+        tmp_path, "echo 'ADMIT: no — reusable? yes, but duplicated'\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    judge = ClaudeJudge(prompt_file=str(prompt), workdir=tmp_path)
+    assert judge.admit(_skill()) is False
+
+
+def test_claude_judge_plain_no(tmp_path, monkeypatch):
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(tmp_path, "echo 'ADMIT: no'\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    judge = ClaudeJudge(prompt_file=str(prompt), workdir=tmp_path)
+    assert judge.admit(_skill()) is False
+
+
+def test_claude_actor_timeout_raises(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(tmp_path, "sleep 5\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=1)
+    with pytest.raises(ActorError, match="timed out"):
+        actor.run_debug(task, model="opus")
+
+
+def test_claude_actor_nonzero_exit_raises(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(tmp_path, "exit 3\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
+    with pytest.raises(ActorError, match="exited 3"):
+        actor.run_debug(task, model="opus")
+
+
+def test_claude_propose_truncates_to_k_and_casefold_sorts(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    iter_dir = tmp_path / "iter_00"
+    body = "".join(
+        f"mkdir -p '{iter_dir}/candidate_{n}'\n"
+        f"echo 'print({i})' > '{iter_dir}/candidate_{n}/code.py'\n"
+        for i, n in enumerate(["A", "b", "C"]))
+    bin_dir = _make_shim(tmp_path, body)
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
+    ctx = ProposeContext(task_dir=task, iter_dir=iter_dir,
+                         top3=[], skills=[], k=2)
+    paths = actor.propose(ctx, model="sonnet")
+    assert [p.parent.name for p in paths] == ["candidate_A", "candidate_b"]
+
+
+def test_claude_propose_happy_path(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    iter_dir = tmp_path / "iter_00"
+    body = "".join(
+        f"mkdir -p '{iter_dir}/candidate_{n}'\n"
+        f"echo 'print({i})' > '{iter_dir}/candidate_{n}/code.py'\n"
+        for i, n in enumerate(["A", "B"]))
+    bin_dir = _make_shim(tmp_path, body)
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
+    ctx = ProposeContext(task_dir=task, iter_dir=iter_dir,
+                         top3=[], skills=[], k=2)
+    paths = actor.propose(ctx, model="sonnet")
+    assert [p.parent.name for p in paths] == ["candidate_A", "candidate_B"]
+    assert [p.read_text().strip() for p in paths] == ["print(0)", "print(1)"]

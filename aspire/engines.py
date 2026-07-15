@@ -48,7 +48,11 @@ class CapxEngine:
         cmd = self._prefix + ["--program", str(program),
                               "--seeds", ",".join(str(s) for s in seeds),
                               "--out-dir", str(out_dir)]
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self._timeout)
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True,
+                                  errors="replace", timeout=self._timeout)
+        except subprocess.TimeoutExpired as e:
+            raise EngineError(f"engine timed out after {self._timeout}s") from e
         result_file = out_dir / "result.json"
         if not result_file.exists():
             raise EngineError(

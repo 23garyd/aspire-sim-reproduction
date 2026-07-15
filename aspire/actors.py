@@ -50,6 +50,8 @@ class FakeActor:
 
     def propose(self, ctx: ProposeContext, model: str) -> list:
         self.propose_calls.append((str(ctx.iter_dir), model, ctx.k))
+        if not self._sources:
+            raise ActorError("FakeActor: no scripted candidate sources left")
         sources = self._sources.pop(0)
         paths = []
         for i, src in enumerate(sources[:ctx.k]):
@@ -66,12 +68,18 @@ class FakeJudge:
         self._d = list(decisions)
 
     def admit(self, skill: ProposedSkill) -> bool:
+        if not self._d:
+            raise ActorError("FakeJudge: no scripted decisions left")
         return self._d.pop(0)
 
 
 def _run_claude(prompt: str, cwd: Path, model: str, timeout_s: int) -> str:
-    proc = subprocess.run(["claude", "-p", prompt, "--model", model],
-                          cwd=cwd, capture_output=True, text=True, timeout=timeout_s)
+    try:
+        proc = subprocess.run(["claude", "-p", prompt, "--model", model],
+                              cwd=cwd, capture_output=True, text=True,
+                              errors="replace", timeout=timeout_s)
+    except subprocess.TimeoutExpired as e:
+        raise ActorError(f"claude timed out after {timeout_s}s") from e
     if proc.returncode != 0:
         raise ActorError(f"claude exited {proc.returncode}: {proc.stderr[-800:]}")
     return proc.stdout
@@ -102,10 +110,11 @@ class ClaudeCodeActor:
                  f"Top programs so far: {[(str(p), s) for p, s in ctx.top3]}. "
                  f"{ctx.history_note}")
         _run_claude(self._prompt() + extra, ctx.task_dir, model, self._timeout)
-        paths = sorted(ctx.iter_dir.glob("candidate_*/code.py"))
+        paths = sorted(ctx.iter_dir.glob("candidate_*/code.py"),
+                       key=lambda p: p.parent.name.casefold())
         if not paths:
             raise ActorError("proposer wrote no candidate_*/code.py files")
-        return paths
+        return paths[:ctx.k]
 
 
 class ClaudeJudge:
@@ -123,5 +132,10 @@ class ClaudeJudge:
         for line in out.splitlines():
             low = line.strip().lower()
             if low.startswith("admit:"):
-                return "yes" in low
+                verdict = low.split("admit:", 1)[1].strip()
+                if verdict.startswith("yes"):
+                    return True
+                if verdict.startswith("no"):
+                    return False
+                # unrecognized verdict token: keep scanning remaining lines
         raise ActorError(f"judge reply had no ADMIT line: {out[-400:]}")
