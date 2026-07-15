@@ -98,6 +98,50 @@ def test_debug_exhausted_falls_through_to_evosearch(tmp_path):
     assert (task / "evosearch_best_code.py").read_text() == "good"
 
 
+def test_run_short_circuits_after_validation(tmp_path):
+    task = _task(tmp_path)
+    lib = SkillLibrary(tmp_path / "lib")
+    first = TaskPipeline(task, FakeEngine([ExecuteResult(1.0), ExecuteResult(0.9)]),
+                         FakeActor(), FakeJudge([]), lib, CFG).run()
+    assert not (task / "VALIDATION_STARTED").exists()
+    # resume: FakeEngine([]) raises if ANY engine call happens
+    second = TaskPipeline(task, FakeEngine([]), FakeActor(), FakeJudge([]), lib, CFG).run()
+    assert second.val_score == first.val_score == 0.9
+    assert second.program == first.program
+    assert second.dbg_score == first.dbg_score == 1.0
+    assert not (task / "TAINTED").exists()
+
+
+def test_interrupted_validation_taints(tmp_path):
+    task = _task(tmp_path)
+    (task / "VALIDATION_STARTED").touch()          # crash artifact
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, FakeEngine([ExecuteResult(1.0)]), FakeActor(),
+                        FakeJudge([]), lib, CFG)
+    with pytest.raises(ValidationReuseError, match="interrupted"):
+        pipe.run()
+    assert (task / "TAINTED").exists()
+
+
+def test_evosearch_worse_than_debug_keeps_debug_program(tmp_path):
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=1, s_dbg=[0, 1], s_val=[100, 101])
+    engine = FakeEngine([ExecuteResult(0.0),               # Stage 0
+                         ExecuteResult(0.5),               # debug fix on S_dbg
+                         ExecuteResult(0.0),               # evosearch baseline
+                         ExecuteResult(0.3), ExecuteResult(0.2),  # iter_00 candidates
+                         ExecuteResult(0.9)])              # Stage 2 on the DEBUG program
+    (task / "fix_code.py").write_text("decent_fix()")
+    actor = FakeActor(reports=[ActorReport(outcome="fail", diagnosis="d",
+                                           code_path="fix_code.py")],
+                      candidate_sources=[["worse1", "worse2"]])
+    lib = SkillLibrary(tmp_path / "lib")
+    result = TaskPipeline(task, engine, actor, FakeJudge([]), lib, cfg).run()
+    assert result.dbg_score == 0.5
+    assert result.program.endswith("fix_code.py")          # debug program won
+    assert engine.calls[-1][0].endswith("fix_code.py")     # S_val ran on it
+
+
 def test_second_validation_marks_tainted(tmp_path):
     task = _task(tmp_path)
     engine = FakeEngine([ExecuteResult(1.0), ExecuteResult(0.9), ExecuteResult(0.9)])

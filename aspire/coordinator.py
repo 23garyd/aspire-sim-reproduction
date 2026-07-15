@@ -6,6 +6,7 @@ aspire/run.py iterates TaskPipeline over a task list."""
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,6 +18,12 @@ from aspire.skill_library import Skill, SkillLibrary
 
 class ValidationReuseError(RuntimeError):
     """S_val was already spent for this task; the run is tainted."""
+
+
+def _atomic_write(path: Path, text: str) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text)
+    os.replace(tmp, path)
 
 
 @dataclass(frozen=True)
@@ -36,18 +43,41 @@ class TaskPipeline:
         self.library, self.cfg = library, cfg
 
     # -- Stage 2 guard ------------------------------------------------------
-    def validate(self, program: Path):
+    def validate(self, program: Path, dbg_score: float = -1.0):
         marker = self.task_dir / "VALIDATION_DONE"
+        started = self.task_dir / "VALIDATION_STARTED"
         if marker.exists():
             (self.task_dir / "TAINTED").touch()
             raise ValidationReuseError(
                 f"S_val already used for {self.task_dir}; run marked TAINTED")
+        if started.exists():
+            (self.task_dir / "TAINTED").touch()
+            raise ValidationReuseError(
+                f"validation was interrupted for {self.task_dir}; "
+                "S_val possibly spent; manual review required")
+        _atomic_write(started, json.dumps({"program": str(program)}))
         result = self.engine.execute(program, self.cfg.s_val)
-        marker.write_text(json.dumps({"program": str(program), "score": result.score}))
+        _atomic_write(marker, json.dumps({"program": str(program),
+                                          "score": result.score,
+                                          "dbg_score": dbg_score}))
+        started.unlink(missing_ok=True)
         return result
 
     # -- full pipeline ------------------------------------------------------
     def run(self) -> TaskResult:
+        """Resume semantics: a completed validation short-circuits the whole run;
+        skills admitted before a crash persist in the library, skills not yet
+        admitted at crash time are not re-derived (deliberate: re-running the
+        actor would re-spend tokens and risk duplicate admissions)."""
+        done = self.task_dir / "VALIDATION_DONE"
+        if done.exists():
+            marker = json.loads(done.read_text())
+            return TaskResult(stage_reached="validated",
+                              dbg_score=marker.get("dbg_score", -1.0),
+                              val_score=marker["score"],
+                              program=marker["program"],
+                              admitted_skills=())
+
         baseline = self.task_dir / "code.py"
         r = self.engine.execute(baseline, self.cfg.s_dbg)
         dbg_score, program, report = r.score, baseline, None
@@ -65,10 +95,12 @@ class TaskPipeline:
         if dbg_score < self.cfg.theta:                      # evosearch fallback
             best = evosearch(self.task_dir, self.engine, self.actor, self.cfg,
                              skills=self.library.load_all())
+            # >= (adopt on ties) vs Stage-1's >: the evosearch best is
+            # disk-checkpointed, so prefer it on ties for resumability.
             if best.score >= dbg_score:
                 dbg_score, program = best.score, best.path
 
-        val = self.validate(program)                        # Stage 2, exactly once
+        val = self.validate(program, dbg_score)             # Stage 2, exactly once
 
         admitted = []
         if report is not None:
