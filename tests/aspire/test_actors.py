@@ -228,6 +228,44 @@ def test_claude_judge_receives_existing_entries(tmp_path, monkeypatch):
     assert "multi-angle-approach" in args and "Existing library entries" in args
 
 
+def test_fake_actor_extract_records_and_pops(tmp_path):
+    rep = ActorReport(outcome="success", diagnosis="d", code_path="code.py")
+    actor = FakeActor(extraction_reports=[rep])
+    assert actor.extract(tmp_path, model="opus") == rep
+    assert actor.extract_calls == [(str(tmp_path), "opus")]
+    with pytest.raises(ActorError, match="extraction"):
+        actor.extract(tmp_path, model="opus")
+
+
+def test_claude_actor_extract_uses_extract_prompt_and_distinct_report(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    dbg = tmp_path / "d.md"; dbg.write_text("DEBUG_MARK")
+    ext = tmp_path / "e.md"; ext.write_text("EXTRACT_MARK")
+    bin_dir = _make_shim(
+        tmp_path,
+        'echo "$@" > cli_args.txt\n'
+        "echo '" + json.dumps({"outcome": "success", "diagnosis": "d",
+                               "code_path": "w.py", "proposed_skills": []})
+        + "' > extraction_report.json\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(dbg), extract_prompt_file=str(ext),
+                            timeout_s=30)
+    rep = actor.extract(task, model="opus")
+    assert rep.outcome == "success"
+    args = (task / "cli_args.txt").read_text()
+    assert "EXTRACT_MARK" in args and "DEBUG_MARK" not in args
+
+
+def test_claude_actor_extract_missing_report_raises(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    p = tmp_path / "p.md"; p.write_text("x")
+    bin_dir = _make_shim(tmp_path, "true\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(p), extract_prompt_file=str(p), timeout_s=30)
+    with pytest.raises(ActorError, match="extraction_report.json"):
+        actor.extract(task, model="opus")
+
+
 def test_claude_propose_injects_coordinator_skills_into_prompt(tmp_path, monkeypatch):
     from aspire.skill_library import Skill
     task = tmp_path / "task"; task.mkdir()

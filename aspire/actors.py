@@ -31,6 +31,7 @@ class ProposeContext:
 class Actor(Protocol):
     def run_debug(self, task_dir: Path, model: str) -> ActorReport: ...
     def propose(self, ctx: ProposeContext, model: str) -> list: ...
+    def extract(self, task_dir: Path, model: str) -> ActorReport: ...
 
 
 class Judge(Protocol):
@@ -38,16 +39,23 @@ class Judge(Protocol):
 
 
 class FakeActor:
-    def __init__(self, reports=(), candidate_sources=()):
+    def __init__(self, reports=(), candidate_sources=(), extraction_reports=()):
         self._reports = list(reports)
         self._sources = list(candidate_sources)
-        self.debug_calls, self.propose_calls = [], []
+        self._extraction_reports = list(extraction_reports)
+        self.debug_calls, self.propose_calls, self.extract_calls = [], [], []
 
     def run_debug(self, task_dir: Path, model: str) -> ActorReport:
         self.debug_calls.append((str(task_dir), model))
         if not self._reports:
             raise ActorError("FakeActor: no scripted reports left")
         return self._reports.pop(0)
+
+    def extract(self, task_dir: Path, model: str) -> ActorReport:
+        self.extract_calls.append((str(task_dir), model))
+        if not self._extraction_reports:
+            raise ActorError("FakeActor: no scripted extraction reports left")
+        return self._extraction_reports.pop(0)
 
     def propose(self, ctx: ProposeContext, model: str) -> list:
         self.propose_calls.append((str(ctx.iter_dir), model, ctx.k, ctx.history_note))
@@ -90,9 +98,10 @@ def _run_claude(prompt: str, cwd: Path, model: str, timeout_s: int) -> str:
 
 class ClaudeCodeActor:
     def __init__(self, prompt_file: str, propose_prompt_file: str = None,
-                 timeout_s: int = 7200):
+                 extract_prompt_file: str = None, timeout_s: int = 7200):
         self._prompt_file = prompt_file
         self._propose_prompt_file = propose_prompt_file
+        self._extract_prompt_file = extract_prompt_file
         self._timeout = timeout_s
 
     def _prompt(self) -> str:
@@ -101,11 +110,24 @@ class ClaudeCodeActor:
     def _propose_prompt(self) -> str:
         return Path(self._propose_prompt_file or self._prompt_file).read_text()
 
+    def _extract_prompt(self) -> str:
+        return Path(self._extract_prompt_file or self._prompt_file).read_text()
+
     def run_debug(self, task_dir: Path, model: str) -> ActorReport:
         _run_claude(self._prompt(), task_dir, model, self._timeout)
         report = task_dir / "report.json"
         if not report.exists():
             raise ActorError("actor finished without writing report.json")
+        try:
+            return ActorReport.load(report)
+        except ReportError as e:
+            raise ActorError(str(e)) from e
+
+    def extract(self, task_dir: Path, model: str) -> ActorReport:
+        _run_claude(self._extract_prompt(), task_dir, model, self._timeout)
+        report = task_dir / "extraction_report.json"
+        if not report.exists():
+            raise ActorError("actor finished without writing extraction_report.json")
         try:
             return ActorReport.load(report)
         except ReportError as e:
