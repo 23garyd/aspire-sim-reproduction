@@ -69,6 +69,8 @@ class ActorReport:
     diagnosis: str
     code_path: str                 # final program, relative to the task dir
     proposed_skills: tuple = ()
+    debug_validation_rate: float = -1.0   # fraction of debug seeds the final fix passed
+    seed_attempts: tuple = ()             # tuple of (seed, attempts) pairs
 
     _REQUIRED = ("outcome", "diagnosis", "code_path")
 
@@ -87,5 +89,15 @@ class ActorReport:
             skills = tuple(ProposedSkill(**s) for s in data.get("proposed_skills", []))
         except TypeError as e:
             raise ReportError(f"bad proposed_skill entry: {e}") from e
+        try:
+            debug_validation_rate = float(data.get("debug_validation_rate", -1.0))
+        except (TypeError, ValueError) as e:
+            raise ReportError(f"bad debug_validation_rate: {e}") from e
+        try:
+            seed_attempts = tuple(tuple(x) for x in data.get("seed_attempts", []))
+        except TypeError as e:
+            raise ReportError(f"bad seed_attempts: {e}") from e
         return cls(outcome=data["outcome"], diagnosis=data["diagnosis"],
-                   code_path=data["code_path"], proposed_skills=skills)
+                   code_path=data["code_path"], proposed_skills=skills,
+                   debug_validation_rate=debug_validation_rate,
+                   seed_attempts=seed_attempts)

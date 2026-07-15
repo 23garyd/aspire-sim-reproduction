@@ -73,3 +73,29 @@ def test_actor_report_unknown_skill_key_raises(tmp_path):
                                                   "strategy": "s", "bogus": 1}]}))
     with pytest.raises(ReportError, match="proposed_skill"):
         ActorReport.load(p)
+
+
+def test_actor_report_optional_appendix_fields(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "success", "diagnosis": "d",
+                             "code_path": "fix_code.py",
+                             "debug_validation_rate": 0.67,
+                             "seed_attempts": [[0, 1], [1, 3]]}))
+    r = ActorReport.load(p)
+    assert r.debug_validation_rate == 0.67
+    assert r.seed_attempts == ((0, 1), (1, 3))
+
+
+def test_actor_report_fields_default_when_absent(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "fail", "diagnosis": "d", "code_path": "c.py"}))
+    r = ActorReport.load(p)
+    assert r.debug_validation_rate == -1.0 and r.seed_attempts == ()
+
+
+def test_actor_report_malformed_rate_raises(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "fail", "diagnosis": "d", "code_path": "c.py",
+                             "debug_validation_rate": "high"}))
+    with pytest.raises(ReportError, match="debug_validation_rate"):
+        ActorReport.load(p)
