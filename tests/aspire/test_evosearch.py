@@ -159,6 +159,20 @@ def test_history_note_reaches_proposer(tmp_path):
     assert any("UNIQUE_FAILURE_XYZ" in str(call) for call in actor.propose_calls)
 
 
+def test_findings_written_after_search(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(0.5), ExecuteResult(1.0)])
+    actor = FakeActor(candidate_sources=[["v1", "v2"]])
+    evosearch(task, engine, actor, _cfg())
+    text = (task / "findings.md").read_text()
+    assert "best score: 1.00" in text
+    assert "task_analysis.md" in text
+    # Step-0 short-circuit must NOT rewrite findings:
+    (task / "findings.md").write_text("SENTINEL")
+    evosearch(task, FakeEngine([]), FakeActor(), _cfg())
+    assert (task / "findings.md").read_text() == "SENTINEL"
+
+
 def test_resume_tolerates_pre_g3_checkpoints(tmp_path):
     task = _task(tmp_path)
     run = task / "run_001"; it = run / "iter_00"; it.mkdir(parents=True)

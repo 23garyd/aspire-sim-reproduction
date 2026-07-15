@@ -107,6 +107,30 @@ def _load_checkpoint(path: Path):
             f"corrupt checkpoint {path}: delete it to re-run that round") from e
 
 
+def _write_findings(task_dir: Path, run_dir: Path, best, rounds_run: int,
+                     total_candidates: int) -> None:
+    """Deterministic, no-LLM summary written once per fresh search (U3/G6). The
+    Step-0 checkpoint short-circuit in evosearch() returns before this is called,
+    so a resumed/already-done search never rewrites an existing findings.md."""
+    suite, name = task_dir.parent.name, task_dir.name
+    baseline = task_dir / "code.py"
+    best_path = Path(best[0])
+    source = "baseline (code.py)" if best_path == baseline else str(best_path.resolve())
+    audit_rejected = len(list(run_dir.rglob("*.AUDIT_REJECTED")))
+    lines = [
+        f"# Findings: {suite}/{name}",
+        "",
+        f"- best score: {best[1]:.2f}",
+        f"- source: {source}",
+        f"- rounds executed this run: {rounds_run}",
+        f"- total candidates evaluated: {total_candidates}",
+        f"- audit-rejected candidates: {audit_rejected}",
+        f"- ledger: {run_dir.name}/task_analysis.md",
+        "- winning program: evosearch_best_code.py",
+    ]
+    _atomic_write(task_dir / "findings.md", "\n".join(lines) + "\n")
+
+
 def _run_dir(task_dir: Path) -> Path:
     existing = sorted(task_dir.glob("run_*"))
     if existing:
@@ -140,9 +164,12 @@ def evosearch(task_dir: Path, engine, actor, cfg: RunConfig, skills=()) -> Best:
         history = [(baseline, r0.score, b_summary)]
     best = max(history, key=lambda e: e[1])
 
+    rounds_run = 0            # iterations processed THIS call (resumed or fresh)
+    total_candidates = 0      # candidates across all iters seen (cumulative, on disk)
     for i in range(cfg.t):
         if best[1] >= cfg.theta:
             break
+        rounds_run += 1
         iter_dir = run_dir / f"iter_{i:02d}"
         summary = iter_dir / "iter_summary.json"
         if summary.exists():                                   # resume from disk
@@ -167,6 +194,7 @@ def evosearch(task_dir: Path, engine, actor, cfg: RunConfig, skills=()) -> Best:
                 entries.append({"path": str(Path(c).resolve()), "score": r.score,
                                 "summary": c_summary})
             _atomic_write(summary, json.dumps(entries, indent=1))
+        total_candidates += len(entries)
         _append_ledger(run_dir, i, entries)
         best = max(history, key=lambda e: e[1])
 
@@ -196,4 +224,5 @@ def evosearch(task_dir: Path, engine, actor, cfg: RunConfig, skills=()) -> Best:
     tmp_code = best_code.with_suffix(".py.tmp")
     shutil.copyfile(best[0], tmp_code)
     os.replace(tmp_code, best_code)
+    _write_findings(task_dir, run_dir, best, rounds_run, total_candidates)
     return Best(best_code, best[1])
