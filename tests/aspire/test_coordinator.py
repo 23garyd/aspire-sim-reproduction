@@ -110,6 +110,16 @@ def test_run_short_circuits_after_validation(tmp_path):
     assert second.program == first.program
     assert second.dbg_score == first.dbg_score == 1.0
     assert not (task / "TAINTED").exists()
+    assert second.tainted is False
+
+
+def test_run_fast_fails_on_interrupted_marker_before_any_work(tmp_path):
+    task = _task(tmp_path)
+    (task / "VALIDATION_STARTED").touch()
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, FakeEngine([]), FakeActor(), FakeJudge([]), lib, CFG)
+    with pytest.raises(ValidationReuseError, match="interrupted"):
+        pipe.run()   # FakeEngine([]) proves no Stage-0 work happened
 
 
 def test_interrupted_validation_taints(tmp_path):

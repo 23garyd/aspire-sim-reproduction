@@ -33,6 +33,7 @@ class TaskResult:
     val_score: float
     program: str              # path of the validated program
     admitted_skills: tuple = ()
+    tainted: bool = False
 
 
 class TaskPipeline:
@@ -76,7 +77,15 @@ class TaskPipeline:
                               dbg_score=marker.get("dbg_score", -1.0),
                               val_score=marker["score"],
                               program=marker["program"],
-                              admitted_skills=())
+                              admitted_skills=(),
+                              tainted=(self.task_dir / "TAINTED").exists())
+
+        started = self.task_dir / "VALIDATION_STARTED"
+        if started.exists():
+            (self.task_dir / "TAINTED").touch()
+            raise ValidationReuseError(
+                f"validation was interrupted for {self.task_dir}; "
+                "S_val possibly spent; manual review required")
 
         baseline = self.task_dir / "code.py"
         r = self.engine.execute(baseline, self.cfg.s_dbg)
