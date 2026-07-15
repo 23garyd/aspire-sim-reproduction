@@ -71,6 +71,13 @@ skills).
 - Prompt: from App E.1 transcriptions + `[RECONSTRUCTED]` bridging (Class C residue,
   marked).
 
+**G4 review carry-forward (pre-existing, tracked):** Stage-1 rounds overwrite
+`fix_code.py` in place, so when round 1 wins and round 2 regresses, `validate(program)`
+validates round-2's FILE CONTENT while dbg_score/winner/ describe round 1 (aliasing).
+Fix direction: round-distinct filenames (fix_code_r1.py) or copy the winning program's
+bytes aside at adoption time and validate the copy. Not introduced by G4; schedule with
+G6 hardening.
+
 ### Phase G5 — run_episode() against real CaP-X (P0)  [Class A, on simhost]
 - Execute existing `m0_rig_up.sh`; wire `run_episode()` to CaP-Gym per the repo docs;
   capture golden episode; add golden regression test (`tests/aspire/golden/`).
@@ -78,6 +85,10 @@ skills).
   around the primitive namespace (our code, their API).
 - Exit criterion: one Robosuite task end-to-end (real env, real actor, real trace,
   real skill admitted) — review step 9.
+
+**G4 re-review carry-forward:** the swallowed extraction failure is a bare `pass` —
+add an EXTRACTION_FAILED marker or stderr line so "extraction proposed nothing" and
+"extraction crashed" are distinguishable. Fold into G6.
 
 ### Phase G6 — Appendix-E operational details  [Class B, prompt+enforcement]
 - Enforce in code what today is prompt-only: three-attempt cap per seed, `BLOCKED.md`
