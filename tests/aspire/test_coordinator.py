@@ -160,8 +160,40 @@ def test_evosearch_worse_than_debug_keeps_debug_program(tmp_path):
     lib = SkillLibrary(tmp_path / "lib")
     result = TaskPipeline(task, engine, actor, FakeJudge([]), lib, cfg).run()
     assert result.dbg_score == 0.5
-    assert result.program.endswith("fix_code.py")          # debug program won
-    assert engine.calls[-1][0].endswith("fix_code.py")     # S_val ran on it
+    assert result.program.endswith("winner/program.py")    # debug program won (stable copy)
+    assert engine.calls[-1][0].endswith("winner/program.py")  # S_val ran on it
+
+
+def test_validation_runs_winning_content_not_overwritten_file(tmp_path):
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=2, s_dbg=[0, 1], s_val=[100, 101])
+
+    class OverwritingActor(FakeActor):
+        def run_debug(self, task_dir, model):
+            rep = super().run_debug(task_dir, model)
+            (task_dir / "fix_code.py").write_text(
+                f"content_round_{len(self.debug_calls)}()")
+            return rep
+
+    engine = FakeEngine([ExecuteResult(0.0),   # Stage 0
+                         ExecuteResult(0.6),   # round-1 fix (content_round_1) WINS
+                         ExecuteResult(0.2),   # round-2 fix (content_round_2) regresses
+                         ExecuteResult(0.0),   # evosearch baseline
+                         ExecuteResult(0.1), ExecuteResult(0.1),   # candidates lose
+                         ExecuteResult(0.9)])  # S_val
+    actor = OverwritingActor(
+        reports=[ActorReport(outcome="success", diagnosis="d1", code_path="fix_code.py"),
+                 ActorReport(outcome="fail", diagnosis="d2", code_path="fix_code.py")],
+        candidate_sources=[["a", "b"]],
+        extraction_reports=[_extraction_report(name="e1")])
+    lib = SkillLibrary(tmp_path / "lib")
+    result = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, cfg).run()
+    # validation executed the ROUND-1 content, not the round-2 overwrite:
+    assert (task / "winner" / "program.py").read_text() == "content_round_1()"
+    assert engine.calls[-1][0].endswith("winner/program.py")
+    assert result.program.endswith("winner/program.py")
+    # the on-disk fix file is round-2's (overwritten) — proving the aliasing existed:
+    assert (task / "fix_code.py").read_text() == "content_round_2()"
 
 
 def test_second_validation_marks_tainted(tmp_path):

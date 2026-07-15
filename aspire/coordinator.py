@@ -33,6 +33,12 @@ def _atomic_write(path: Path, text: str) -> None:
     os.replace(tmp, path)
 
 
+def _atomic_write_bytes(path: Path, data: bytes) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_bytes(data)
+    os.replace(tmp, path)
+
+
 @dataclass(frozen=True)
 class TaskResult:
     stage_reached: str        # "validated"
@@ -110,6 +116,10 @@ class TaskPipeline:
         latest = r
         winning_result = r          # bundle of the program currently in the lead
         winning_report = None       # Stage-1 report of the program currently in the lead
+        # captured at adoption time, NOT read again later: a later Stage-1 round (or
+        # even evosearch) may overwrite the same on-disk path (fix_code.py) in place,
+        # so the bytes describing the CURRENT winner must be pinned the moment it wins.
+        winning_bytes = baseline.read_bytes()
         write_execution_context(self.task_dir, r)
         write_task_metadata(self.task_dir, task_language=self.task_language)
 
@@ -124,6 +134,7 @@ class TaskPipeline:
                 if r.score > dbg_score:
                     dbg_score, program = r.score, fix
                     winning_result, winning_report = r, report
+                    winning_bytes = fix.read_bytes()
                 if dbg_score >= self.cfg.theta:
                     break
                 write_execution_context(self.task_dir, r)   # refresh for next round
@@ -140,6 +151,9 @@ class TaskPipeline:
                 # evosearch persists its own bundle at task level; no Stage-1
                 # report describes this program, so both trackers reset:
                 winning_result, winning_report = None, None
+                # evosearch_best_code.py is already a stable, standalone copy (it is
+                # never mutated again), so reading it now is safe.
+                winning_bytes = best.path.read_bytes()
 
         # G3 binding: persist the debug-winner's trace bundle BEFORE validation so a
         # later phase (ExtractValidatedPatterns) can read it; validate() adds the
@@ -159,6 +173,13 @@ class TaskPipeline:
             srcsum = self.task_dir / "evosearch_best_summary.txt"
             _atomic_write(winner_dir / "summary.txt",
                          srcsum.read_text() if srcsum.exists() else "(unavailable)")
+
+        # U1 (G6): validate a STABLE COPY of the winning bytes, not the live path —
+        # Stage-1 rounds rewrite fix_code.py in place, so if a later round regresses
+        # after an earlier round won, the live file no longer matches the winner the
+        # dbg_score/winner bundle describe. winning_bytes was pinned at adoption time.
+        _atomic_write_bytes(winner_dir / "program.py", winning_bytes)
+        program = winner_dir / "program.py"
 
         val = self.validate(program, dbg_score)             # Stage 2, exactly once
 
