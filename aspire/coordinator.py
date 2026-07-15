@@ -3,8 +3,8 @@ Stage 0 baseline on S_dbg -> Stage 1 actor debug rounds -> evosearch fallback ->
 Stage 2 validation on S_val (EXACTLY ONCE) -> mechanical audit -> judge -> admission.
 On a single-GPU box the paper's device-dispatch loop degenerates to sequential tasks;
 aspire/run.py iterates TaskPipeline over a task list.
-Task context files (traces/, skills.md, task.md) are materialized by the engine/runner
-layer at M2; TaskPipeline does not write them."""
+Task context files (traces/, skills.md, task.md) are materialized by TaskPipeline.run()
+around each engine execute(), so the actor's task dir matches what its prompt claims."""
 from __future__ import annotations
 
 import json
@@ -16,6 +16,8 @@ from aspire.audit import audit_code
 from aspire.config import RunConfig
 from aspire.evosearch import evosearch
 from aspire.skill_library import Skill, SkillLibrary
+from aspire.task_context import (relevant_skills, write_execution_context,
+                                 write_skills_context, write_task_metadata)
 
 
 class ValidationReuseError(RuntimeError):
@@ -40,10 +42,11 @@ class TaskResult:
 
 class TaskPipeline:
     def __init__(self, task_dir: Path, engine, actor, judge, library: SkillLibrary,
-                 cfg: RunConfig):
+                 cfg: RunConfig, task_language: str = ""):
         self.task_dir = Path(task_dir)
         self.engine, self.actor, self.judge = engine, actor, judge
         self.library, self.cfg = library, cfg
+        self.task_language = task_language
 
     # -- Stage 2 guard ------------------------------------------------------
     def validate(self, program: Path, dbg_score: float = -1.0):
@@ -92,20 +95,27 @@ class TaskPipeline:
         baseline = self.task_dir / "code.py"
         r = self.engine.execute(baseline, self.cfg.s_dbg)
         dbg_score, program, report = r.score, baseline, None
+        latest = r
+        write_execution_context(self.task_dir, r)
+        write_task_metadata(self.task_dir, task_language=self.task_language)
 
         if dbg_score < self.cfg.theta:
             for _ in range(self.cfg.debug_rounds):          # Stage 1
+                write_skills_context(self.task_dir,
+                                     relevant_skills(self.library, latest.traces))
                 report = self.actor.run_debug(self.task_dir, model=self.cfg.model_repair)
                 fix = self.task_dir / report.code_path
                 r = self.engine.execute(fix, self.cfg.s_dbg)
+                latest = r
                 if r.score > dbg_score:
                     dbg_score, program = r.score, fix
                 if dbg_score >= self.cfg.theta:
                     break
+                write_execution_context(self.task_dir, r)   # refresh for next round
 
         if dbg_score < self.cfg.theta:                      # evosearch fallback
             best = evosearch(self.task_dir, self.engine, self.actor, self.cfg,
-                             skills=self.library.load_all())
+                             skills=relevant_skills(self.library, latest.traces))
             # >= (adopt on ties) vs Stage-1's >: the evosearch best is
             # disk-checkpointed, so prefer it on ties for resumability.
             if best.score >= dbg_score:

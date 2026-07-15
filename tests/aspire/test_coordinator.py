@@ -196,6 +196,28 @@ def test_validate_blocks_cheating_program(tmp_path):
     assert (task / "cheat.py.AUDIT_REJECTED").exists()
 
 
+def test_run_materializes_task_context_for_actor(tmp_path):
+    from aspire.schemas import TraceRecord
+    from aspire.skill_library import Skill
+    task = _task(tmp_path)
+    fail_trace = TraceRecord(step=1, function="navigate_to_pose", args={},
+                             status="error", result_summary="PLANNING_ERROR near table",
+                             duration_ms=5.0, media=[])
+    engine = FakeEngine([ExecuteResult(0.0, traces=[fail_trace]),
+                         ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    lib = SkillLibrary(tmp_path / "lib")
+    lib.add(Skill(name="multi-angle-approach", category="navigation",
+                  failure_signature="repeated PLANNING_ERROR near obstacle",
+                  when_to_apply="w", strategy="s"))
+    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+                        FakeJudge([True]), lib, CFG, task_language="pick up the can")
+    pipe.run()
+    assert "PLANNING_ERROR" in (task / "traces" / "summary.txt").read_text()
+    assert "pick up the can" in (task / "task.md").read_text()
+    assert "multi-angle-approach" in (task / "skills.md").read_text()
+
+
 def test_admission_passes_similar_skills_to_judge(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)
