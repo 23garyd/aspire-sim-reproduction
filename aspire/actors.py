@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Protocol
 
 from aspire.schemas import ActorReport, ProposedSkill, ReportError
+from aspire.skill_library import render_skill
 
 _CAND_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -33,7 +34,7 @@ class Actor(Protocol):
 
 
 class Judge(Protocol):
-    def admit(self, skill: ProposedSkill) -> bool: ...
+    def admit(self, skill: ProposedSkill, existing=()) -> bool: ...
 
 
 class FakeActor:
@@ -66,8 +67,10 @@ class FakeActor:
 class FakeJudge:
     def __init__(self, decisions):
         self._d = list(decisions)
+        self.admit_calls = []
 
-    def admit(self, skill: ProposedSkill) -> bool:
+    def admit(self, skill: ProposedSkill, existing=()) -> bool:
+        self.admit_calls.append((skill.name, tuple(s.name for s in existing)))
         if not self._d:
             raise ActorError("FakeJudge: no scripted decisions left")
         return self._d.pop(0)
@@ -133,9 +136,12 @@ class ClaudeJudge:
         self._prompt_file, self._workdir = prompt_file, Path(workdir)
         self._model, self._timeout = model, timeout_s
 
-    def admit(self, skill: ProposedSkill) -> bool:
+    def admit(self, skill: ProposedSkill, existing=()) -> bool:
         prompt = (Path(self._prompt_file).read_text()
                   + "\n\n## Candidate skill\n" + str(skill.to_dict()))
+        if existing:
+            prompt += ("\n\n## Existing library entries (reject near-duplicates)\n"
+                      + "\n---\n".join(render_skill(s) for s in existing))
         out = _run_claude(prompt, self._workdir, self._model, self._timeout)
         for line in out.splitlines():
             low = line.strip().lower()

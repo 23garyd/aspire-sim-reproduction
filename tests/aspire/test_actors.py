@@ -210,6 +210,24 @@ def test_claude_propose_falls_back_to_debug_prompt_when_no_propose_prompt(
     assert "DEBUG_PROMPT_MARK" in args
 
 
+def test_claude_judge_receives_existing_entries(tmp_path, monkeypatch):
+    from aspire.skill_library import Skill
+    skill = ProposedSkill(name="new-nav", category="navigation", failure_signature="f",
+                          when_to_apply="w", strategy="s")
+    existing = [Skill(name="multi-angle-approach", category="navigation",
+                      failure_signature="PLANNING_ERROR", when_to_apply="near obstacle",
+                      strategy="rotate approach")]
+    prompt = tmp_path / "p.md"; prompt.write_text("judge prompt")
+    bin_dir = _make_shim(tmp_path,
+                         'echo "$@" > judge_args.txt\n'
+                         "echo 'ADMIT: no — duplicate'\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    judge = ClaudeJudge(prompt_file=str(prompt), workdir=tmp_path)
+    assert judge.admit(skill, existing=existing) is False
+    args = (tmp_path / "judge_args.txt").read_text()
+    assert "multi-angle-approach" in args and "Existing library entries" in args
+
+
 def test_claude_propose_injects_coordinator_skills_into_prompt(tmp_path, monkeypatch):
     from aspire.skill_library import Skill
     task = tmp_path / "task"; task.mkdir()

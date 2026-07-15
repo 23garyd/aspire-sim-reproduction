@@ -182,3 +182,18 @@ def test_cheating_fix_scores_zero_and_never_executes(tmp_path):
     assert result.dbg_score == 0.6
     assert (task / "fix_code.py.AUDIT_REJECTED").exists()
     assert result.val_score == 0.9
+
+
+def test_admission_passes_similar_skills_to_judge(tmp_path):
+    from aspire.skill_library import Skill
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    lib = SkillLibrary(tmp_path / "lib")
+    lib.add(Skill(name="old-nav-skill", category="navigation", failure_signature="f",
+                  when_to_apply="w", strategy="s"))
+    judge = FakeJudge([True])
+    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+                        judge, lib, CFG)
+    pipe.run()
+    assert judge.admit_calls == [("multi-angle-approach", ("old-nav-skill",))]

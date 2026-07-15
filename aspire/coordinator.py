@@ -120,7 +120,8 @@ class TaskPipeline:
             for ps in report.proposed_skills:
                 if audit_code(ps.code_sketch):
                     continue                                # mechanical reject, no judge
-                if self.judge.admit(ps):
+                similar = self.library.retrieve(categories=[ps.category])[:5]
+                if self.judge.admit(ps, existing=similar):
                     skill = Skill.from_proposed(ps, provenance=provenance)
                     self.library.add(skill)
                     admitted.append(skill)
