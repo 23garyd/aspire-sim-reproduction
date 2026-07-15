@@ -1,9 +1,11 @@
 import json
 
+import pytest
+
 from aspire.actors import FakeActor
 from aspire.config import RunConfig
 from aspire.engines import FakeEngine
-from aspire.evosearch import evosearch, top3
+from aspire.evosearch import EvosearchError, evosearch, top3
 from aspire.schemas import ExecuteResult
 
 
@@ -69,3 +71,21 @@ def test_resume_skips_completed_iters(tmp_path):
     best = evosearch(task, engine2, actor2, _cfg(t=2))
     assert best.score == 0.7
     assert len(engine2.calls) == 2, "resume must not re-execute finished iterations"
+
+
+def test_orphan_best_code_without_meta_recovers(tmp_path):
+    task = _task(tmp_path)
+    (task / "evosearch_best_code.py").write_text("orphan")   # crash-window artifact
+    engine = FakeEngine([ExecuteResult(1.0)])                 # baseline passes
+    best = evosearch(task, engine, FakeActor(), _cfg())
+    assert best.score == 1.0                                  # searched, not crashed
+    assert (task / "evosearch_best_score.json").exists()
+
+
+def test_corrupt_iter_summary_raises_clear_error(tmp_path):
+    task = _task(tmp_path)
+    run = task / "run_001"; it = run / "iter_00"; it.mkdir(parents=True)
+    (run / "baseline_summary.json").write_text('{"score": 0.0}')
+    (it / "iter_summary.json").write_text('{"trunca')          # simulated torn write
+    with pytest.raises(EvosearchError, match="iter_summary"):
+        evosearch(task, FakeEngine([]), FakeActor(), _cfg())

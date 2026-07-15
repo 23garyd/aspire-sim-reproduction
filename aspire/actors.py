@@ -133,7 +133,8 @@ class ClaudeJudge:
             low = line.strip().lower()
             if low.startswith("admit:"):
                 verdict = low.split("admit:", 1)[1].strip()
-                tok = verdict.split()[0].strip(".,;:!—-") if verdict.split() else ""
+                parts = verdict.split()
+                tok = parts[0].strip(".,;:!—-") if parts else ""
                 if tok == "yes":
                     return True
                 if tok == "no":
