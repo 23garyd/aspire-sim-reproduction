@@ -16,6 +16,7 @@ from pathlib import Path
 
 from aspire.actors import ProposeContext
 from aspire.config import RunConfig
+from aspire.task_context import summarize_traces
 
 
 class EvosearchError(RuntimeError):
@@ -29,8 +30,63 @@ class Best:
 
 
 def top3(history):
-    """history: list[(path_or_key, score)] -> top 3 best-first."""
+    """history: list[(path_or_key, score, ...)] -> top 3 best-first. Tolerant of
+    both legacy 2-tuples and G3's (path, score, summary) 3-tuples."""
     return sorted(history, key=lambda e: e[1], reverse=True)[:3]
+
+
+_LEDGER_HEADER = (
+    "# Task analysis ledger\n"
+    "(created by orchestrator; per-round candidate outcomes. Eliminated = tried, failed on\n"
+    "merit; audit-rejected = never executed. Semantic eliminated-vs-blocked judgment is the\n"
+    "actor's job when reading this ledger.)\n")
+
+
+def failure_note(history, max_lines=10) -> str:
+    """Newest-to-oldest, dedup the "[error]" lines out of each history entry's trace
+    summary. Empty when there are none — this becomes ProposeContext.history_note."""
+    lines = []
+    for entry in reversed(history):
+        summary = entry[2] if len(entry) > 2 else ""
+        for line in summary.splitlines():
+            if "[error]" in line and line not in lines:
+                lines.append(line)
+                if len(lines) >= max_lines:
+                    break
+        if len(lines) >= max_lines:
+            break
+    if not lines:
+        return ""
+    return "Known failure modes (newest first):\n" + "\n".join(lines)
+
+
+def _first_error_line(summary: str) -> str:
+    for line in summary.splitlines():
+        if "[error]" in line:
+            return line
+    return "no failures"
+
+
+def _append_ledger(run_dir: Path, i: int, entries: list) -> None:
+    header = f"## iter_{i:02d}"
+    ledger_path = run_dir / "task_analysis.md"
+    existing = ledger_path.read_text() if ledger_path.exists() else _LEDGER_HEADER
+    if header in existing:
+        return
+    lines = [header]
+    for e in entries:
+        p = Path(e["path"])
+        try:
+            rel = p.relative_to(run_dir.resolve())
+        except ValueError:
+            rel = p
+        marker = p.with_suffix(p.suffix + ".AUDIT_REJECTED")
+        if marker.exists():
+            desc = "AUDIT_REJECTED"
+        else:
+            desc = _first_error_line(e.get("summary", ""))
+        lines.append(f"- {rel}: {e['score']:.2f} — {desc}")
+    _atomic_write(ledger_path, existing.rstrip("\n") + "\n\n" + "\n".join(lines) + "\n")
 
 
 def _atomic_write(path: Path, text: str) -> None:
@@ -69,11 +125,15 @@ def evosearch(task_dir: Path, engine, actor, cfg: RunConfig, skills=()) -> Best:
     baseline = task_dir / "code.py"
     base_meta = run_dir / "baseline_summary.json"
     if base_meta.exists():
-        history = [(baseline, _load_checkpoint(base_meta)["score"])]
+        meta = _load_checkpoint(base_meta)
+        history = [(baseline, meta["score"], meta.get("summary", ""))]
     else:
         r0 = engine.execute(baseline, cfg.s_dbg)
-        _atomic_write(base_meta, json.dumps({"score": r0.score}))
-        history = [(baseline, r0.score)]
+        b_summary = summarize_traces(r0.traces)
+        _atomic_write(run_dir / "baseline_trace.json",
+                     json.dumps([t.to_dict() for t in r0.traces], indent=1))
+        _atomic_write(base_meta, json.dumps({"score": r0.score, "summary": b_summary}))
+        history = [(baseline, r0.score, b_summary)]
     best = max(history, key=lambda e: e[1])
 
     for i in range(cfg.t):
@@ -82,22 +142,50 @@ def evosearch(task_dir: Path, engine, actor, cfg: RunConfig, skills=()) -> Best:
         iter_dir = run_dir / f"iter_{i:02d}"
         summary = iter_dir / "iter_summary.json"
         if summary.exists():                                   # resume from disk
-            for entry in _load_checkpoint(summary):
-                history.append((Path(entry["path"]), entry["score"]))
+            entries = _load_checkpoint(summary)
+            for entry in entries:
+                history.append((Path(entry["path"]), entry["score"],
+                                entry.get("summary", "")))
         else:
             ctx = ProposeContext(task_dir=task_dir, iter_dir=iter_dir,
-                                 top3=top3(history), skills=list(skills), k=cfg.k)
+                                 top3=top3(history), skills=list(skills), k=cfg.k,
+                                 history_note=failure_note(history))
             candidates = actor.propose(ctx, model=cfg.model_propose)
             entries = []
             for c in candidates:
                 r = engine.execute(c, cfg.s_dbg)
-                history.append((c, r.score))
-                entries.append({"path": str(Path(c).resolve()), "score": r.score})
+                c_summary = summarize_traces(r.traces)
+                c_dir = Path(c).parent
+                _atomic_write(c_dir / "trace.json",
+                             json.dumps([t.to_dict() for t in r.traces], indent=1))
+                _atomic_write(c_dir / "trace_summary.txt", c_summary)
+                history.append((c, r.score, c_summary))
+                entries.append({"path": str(Path(c).resolve()), "score": r.score,
+                                "summary": c_summary})
             _atomic_write(summary, json.dumps(entries, indent=1))
+        _append_ledger(run_dir, i, entries)
         best = max(history, key=lambda e: e[1])
 
     if not Path(best[0]).exists():
         raise EvosearchError(f"best program file missing: {best[0]}")
+
+    # Winner's trace bundle, persisted at task level so a later phase
+    # (ExtractValidatedPatterns) can read it. Auxiliary: written before best_meta/
+    # best_code, which is fine — the commit-order invariant only concerns those two.
+    best_summary = best[2] if len(best) > 2 else ""
+    if Path(best[0]) == baseline:
+        src = run_dir / "baseline_trace.json"
+    else:
+        src = Path(best[0]).parent / "trace.json"
+    if best_summary and src.exists():
+        trace_text = src.read_text()
+        summary_text = best_summary
+    else:
+        trace_text = "[]"
+        summary_text = "(trace bundle unavailable: pre-G3 checkpoint)"
+    _atomic_write(task_dir / "evosearch_best_trace.json", trace_text)
+    _atomic_write(task_dir / "evosearch_best_summary.txt", summary_text)
+
     # Commit order: meta first, code last — the Step-0 gate keys on best_code, so it
     # must never exist without its meta. Both writes land atomically via os.replace.
     _atomic_write(best_meta, json.dumps({"score": best[1], "source": str(best[0])}))

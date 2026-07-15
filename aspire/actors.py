@@ -50,7 +50,7 @@ class FakeActor:
         return self._reports.pop(0)
 
     def propose(self, ctx: ProposeContext, model: str) -> list:
-        self.propose_calls.append((str(ctx.iter_dir), model, ctx.k))
+        self.propose_calls.append((str(ctx.iter_dir), model, ctx.k, ctx.history_note))
         if not self._sources:
             raise ActorError("FakeActor: no scripted candidate sources left")
         sources = self._sources.pop(0)
@@ -115,8 +115,10 @@ class ClaudeCodeActor:
         ctx.iter_dir.mkdir(parents=True, exist_ok=True)
         extra = (f"\n\n## This round\nWrite exactly {ctx.k} candidates to "
                  f"{ctx.iter_dir}/candidate_<LETTER>/code.py (A..). "
-                 f"Top programs so far: {[(str(p), s) for p, s in ctx.top3]}. "
-                 f"{ctx.history_note}")
+                 f"Top programs so far: {[(str(p), s) for p, s, *_ in ctx.top3]}. "
+                 f"{ctx.history_note}\n"
+                 f"Read the task analysis ledger first: "
+                 f"{ctx.iter_dir.parent / 'task_analysis.md'}")
         if ctx.skills:
             extra += "\nRelevant skills:\n" + "\n".join(
                 f"- {s.name}: {' '.join(s.when_to_apply.split())}" for s in ctx.skills)

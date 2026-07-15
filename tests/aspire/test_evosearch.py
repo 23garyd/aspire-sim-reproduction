@@ -6,7 +6,7 @@ from aspire.actors import FakeActor
 from aspire.config import RunConfig
 from aspire.engines import FakeEngine
 from aspire.evosearch import EvosearchError, evosearch, top3
-from aspire.schemas import ExecuteResult
+from aspire.schemas import ExecuteResult, TraceRecord
 
 
 def _cfg(**kw):
@@ -89,3 +89,73 @@ def test_corrupt_iter_summary_raises_clear_error(tmp_path):
     (it / "iter_summary.json").write_text('{"trunca')          # simulated torn write
     with pytest.raises(EvosearchError, match="iter_summary"):
         evosearch(task, FakeEngine([]), FakeActor(), _cfg())
+
+
+def _fail_tr(msg, step=1, fn="navigate_to_pose"):
+    return TraceRecord(step=step, function=fn, args={}, status="error",
+                       result_summary=msg, duration_ms=1.0, media=[])
+
+
+def test_history_note_collects_deduped_error_lines():
+    from aspire.evosearch import failure_note
+    from aspire.task_context import summarize_traces
+    s1 = summarize_traces([_fail_tr("PLANNING_ERROR near table")])
+    s2 = summarize_traces([_fail_tr("PLANNING_ERROR near table")])   # duplicate
+    s3 = summarize_traces([_fail_tr("GRIPPER_SLIP on lid", fn="grasp_object")])
+    note = failure_note([("a", 0.1, s1), ("b", 0.2, s2), ("c", 0.3, s3)])
+    assert note.startswith("Known failure modes (newest first):")
+    assert note.count("PLANNING_ERROR") == 1          # deduped
+    assert note.index("GRIPPER_SLIP") < note.index("PLANNING_ERROR")  # newest first
+    assert failure_note([("a", 1.0, "step 1: x [ok] fine\nFAILURES: 0")]) == ""
+
+
+def test_candidate_bundles_and_ledger_written(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([
+        ExecuteResult(0.0, traces=[_fail_tr("BASE_FAIL")]),
+        ExecuteResult(0.5, traces=[_fail_tr("CAND_A_FAIL")]),
+        ExecuteResult(1.0)])
+    actor = FakeActor(candidate_sources=[["a_src", "b_src"]])
+    best = evosearch(task, engine, actor, _cfg())
+    run = task / "run_001"
+    # baseline bundle + summary in checkpoint
+    assert "BASE_FAIL" in (run / "baseline_trace.json").read_text()
+    assert "summary" in json.loads((run / "baseline_summary.json").read_text())
+    # candidate bundle
+    cand_a = run / "iter_00" / "candidate_A"
+    assert "CAND_A_FAIL" in (cand_a / "trace.json").read_text()
+    assert "FAILURES: 1" in (cand_a / "trace_summary.txt").read_text()
+    # iter summary carries summaries
+    entries = json.loads((run / "iter_00" / "iter_summary.json").read_text())
+    assert "CAND_A_FAIL" in entries[0]["summary"]
+    # ledger
+    ledger = (run / "task_analysis.md").read_text()
+    assert "## iter_00" in ledger and "CAND_A_FAIL" in ledger
+    assert "candidate_B/code.py: 1.00 — no failures" in ledger
+    # winner bundle at task level (candidate_B won)
+    assert (task / "evosearch_best_trace.json").exists()
+    assert "FAILURES: 0" in (task / "evosearch_best_summary.txt").read_text()
+    assert best.score == 1.0
+
+
+def test_history_note_reaches_proposer(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0, traces=[_fail_tr("UNIQUE_FAILURE_XYZ")]),
+                         ExecuteResult(1.0)])
+    actor = FakeActor(candidate_sources=[["src"]])
+    evosearch(task, engine, actor, _cfg(k=1))
+    assert any("UNIQUE_FAILURE_XYZ" in str(call) for call in actor.propose_calls)
+
+
+def test_resume_tolerates_pre_g3_checkpoints(tmp_path):
+    task = _task(tmp_path)
+    run = task / "run_001"; it = run / "iter_00"; it.mkdir(parents=True)
+    (run / "baseline_summary.json").write_text('{"score": 0.0}')     # pre-G3: no summary
+    (it / "iter_summary.json").write_text(
+        '[{"path": "%s", "score": 0.3}]' % str(it / "candidate_A" / "code.py").replace("\\", "/"))
+    ca = it / "candidate_A"; ca.mkdir(); (ca / "code.py").write_text("old")
+    engine = FakeEngine([ExecuteResult(0.9), ExecuteResult(0.2)])    # iter_01 only
+    actor = FakeActor(candidate_sources=[["new1", "new2"]])
+    best = evosearch(task, engine, actor, _cfg(t=2))
+    assert best.score == 0.9
+    assert len(engine.calls) == 2, "baseline + iter_00 replayed from disk"
