@@ -72,3 +72,38 @@ def test_capx_engine_malformed_result_raises_engine_error(tmp_path):
     eng = CapxEngine(cmd_prefix=[sys.executable, str(runner)], out_root=tmp_path / "o")
     with pytest.raises(EngineError, match="malformed"):
         eng.execute(prog, [0])
+
+
+from aspire.engines import AuditedEngine
+from aspire.schemas import ExecuteResult as ER
+
+
+def test_audited_engine_passes_clean_program_through(tmp_path):
+    prog = tmp_path / "code.py"; prog.write_text("navigate_to_pose([1, 2, 0.5])")
+    inner = FakeEngine([ER(0.7)])
+    res = AuditedEngine(inner).execute(prog, [0, 1])
+    assert res.score == 0.7
+    assert inner.calls == [(str(prog), (0, 1))]
+
+
+def test_audited_engine_blocks_forbidden_program_without_executing(tmp_path):
+    prog = tmp_path / "cheat.py"
+    prog.write_text("q = env.handle.env.sim.data.qpos")
+    inner = FakeEngine([])          # would raise if called
+    res = AuditedEngine(inner).execute(prog, [0])
+    assert res.score == 0.0
+    assert res.traces[0].function == "audit" and res.traces[0].status == "error"
+    assert "env.handle.env.sim" in res.traces[0].result_summary
+    marker = prog.with_suffix(prog.suffix + ".AUDIT_REJECTED")
+    assert marker.exists() and "env.handle.env.sim" in marker.read_text()
+
+
+def test_audited_engine_blocks_seed_branch(tmp_path):
+    prog = tmp_path / "seedy.py"; prog.write_text("if seed == 3:\n    z = 0.9")
+    res = AuditedEngine(FakeEngine([])).execute(prog, [0])
+    assert res.score == 0.0
+
+
+def test_audited_engine_missing_program_raises(tmp_path):
+    with pytest.raises(EngineError, match="cannot read"):
+        AuditedEngine(FakeEngine([])).execute(tmp_path / "ghost.py", [0])

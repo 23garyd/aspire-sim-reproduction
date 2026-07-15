@@ -7,7 +7,8 @@ import subprocess
 from pathlib import Path
 from typing import Protocol
 
-from aspire.schemas import ExecuteResult
+from aspire.audit import audit_code
+from aspire.schemas import ExecuteResult, TraceRecord
 
 
 class EngineError(RuntimeError):
@@ -30,6 +31,32 @@ class FakeEngine:
         if not self._results:
             raise EngineError("FakeEngine exhausted: more execute() calls than scripted results")
         return self._results.pop(0)
+
+
+class AuditedEngine:
+    """Decorator engine: every program is mechanically audited before execution.
+    Wraps any EngineAdapter so coordinator Stage 0/1, evosearch baseline re-exec,
+    and every candidate all flow through the audit choke point."""
+
+    def __init__(self, inner):
+        self._inner = inner
+
+    def execute(self, program: Path, seeds: list) -> ExecuteResult:
+        try:
+            text = program.read_text()
+        except OSError as e:
+            raise EngineError(f"cannot read program for audit: {e}") from e
+        violations = audit_code(text)
+        if not violations:
+            return self._inner.execute(program, seeds)
+        marker = program.with_suffix(program.suffix + ".AUDIT_REJECTED")
+        marker.write_text("\n".join(violations))
+        return ExecuteResult(
+            score=0.0,
+            traces=[TraceRecord(step=0, function="audit", args={"program": str(program)},
+                                status="error", result_summary="; ".join(violations),
+                                duration_ms=0.0, media=[])],
+            raw_dir="")
 
 
 class CapxEngine:
