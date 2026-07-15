@@ -180,11 +180,13 @@ def test_claude_propose_injects_coordinator_skills_into_prompt(tmp_path, monkeyp
     monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
     actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
     skill = Skill(name="multi-angle-approach", category="navigation",
-                  failure_signature="PLANNING_ERROR", when_to_apply="near obstacle",
+                  failure_signature="PLANNING_ERROR",
+                  when_to_apply="near\nobstacle\tboundary",
                   strategy="rotate approach")
     ctx = ProposeContext(task_dir=task, iter_dir=iter_dir,
                          top3=[], skills=[skill], k=1)
     actor.propose(ctx, model="sonnet")
     args = (task / "cli_args.txt").read_text()
     assert "multi-angle-approach" in args
-    assert "near obstacle" in args
+    # multiline/tabbed skill text is collapsed onto one bullet with single spaces
+    assert "near obstacle boundary" in args

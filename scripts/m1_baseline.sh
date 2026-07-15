@@ -15,8 +15,9 @@ mkdir -p "$OUT"
 TASKS=(lift stack two_arm_handover pick_place_can door)
 
 # Model id for the launcher is confirmed during M0 (CaP-X docs show an
-# OpenAI-compatible proxy; use the Claude model configured there).
-MODEL="${CAPX_MODEL:-claude-opus}"
+# OpenAI-compatible proxy; use the Claude model configured there). CAPX_MODEL
+# is mandatory: baseline numbers must never silently run under a proxy default.
+MODEL="${CAPX_MODEL:?set CAPX_MODEL to the model id confirmed in M0}"
 
 shopt -s nullglob
 for t in "${TASKS[@]}"; do
