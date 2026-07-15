@@ -33,6 +33,11 @@ degenerates to sequential on one GPU (spec'd); K enforced as a max via truncatio
   `SkillLibrary.retrieve` keyword/category search) so the dedup instruction can work.
 - Effort: small. All fake-testable. **Do first — it's a correctness hole in scoring.**
 
+**G1 review carry-forward (non-blocking):** dedup selection is alphabetical
+(`retrieve(categories=...)[:5]`), not similarity-ranked — pass keywords from
+`failure_signature`/`when_to_apply` or rank when the library grows past ~5 entries per
+category. Revisit in G4 (admission rework touches the same code).
+
 ### Phase G2 — Materialize the task directory (P1-#2 core)  [Class B]
 - New `aspire/task_context.py`: writes `traces/trace.json` (+ media file copies),
   `summary.txt`, `task.md` (runtime task language), `skills.md` (coordinator-retrieved
