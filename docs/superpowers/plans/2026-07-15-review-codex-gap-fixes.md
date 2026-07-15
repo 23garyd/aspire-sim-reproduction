@@ -47,6 +47,14 @@ category. Revisit in G4 (admission rework touches the same code).
   (review: "missing from report schema").
 - Fake-testable end-to-end (FakeEngine already returns TraceRecords).
 
+**G2 review carry-forward (binding on G3/G4):** the validated WINNER's trace bundle is
+not persisted by G2 — `traces/` deliberately holds the last FAILURE (correct for the
+debug loop; reviewer-ruled). G3 must persist per-execution trace bundles in history
+entries so G4's ExtractValidatedPatterns can read the winner's bundle; without this,
+G4 is blocked. Also fold into G4's retrieval-ranking note: relevant_skills' len>=4
+OR-token match is mildly over-broad (generic tokens like "near" can pull unrelated
+skills).
+
 ### Phase G3 — Trace-conditioned evosearch (P1-#3)  [Class B]
 - History entries become `(path, score, trace_summary)`; `iter_summary.json` gains the
   failure-mode summary per candidate.
