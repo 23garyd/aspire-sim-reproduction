@@ -1,11 +1,33 @@
 """python -m aspire.run --task-dir T --engine fake|capx ...
-Fake engine: --fake-scores comma list consumed in order (dry runs, CI smoke).
+   python -m aspire.run --tasks-root DIR --engine fake|capx ...   (sequential campaign)
+Fake engine: --fake-scores comma list consumed in order (dry runs, CI smoke); for
+--tasks-root a SINGLE engine instance is shared across every task in the campaign, so
+scripted fake scores are consumed across tasks in the order tasks are dispatched.
 Capx engine: --capx-cmd "uv run --no-sync python scripts/capx_execute.py" --out-root R.
-Prints ONE json summary line to stdout (last line) for scripting."""
+--task-dir mode prints ONE json summary line to stdout (last line) for scripting.
+
+--tasks-root mode (single-GPU degenerate form of Appendix E's device-dispatch loop):
+tasks are discovered two levels deep under DIR (DIR/<suite>/<task>/ containing
+code.py), sorted by (suite, task) for a deterministic, resumable order. A task whose
+VALIDATION_DONE already exists is never redispatched -- it is "skipped" (a stderr
+note is printed) and counted as already-done. A task whose run raises a domain error
+(ValidationReuseError/EngineError/ActorError/EvosearchError) is recorded as "failed"
+and the campaign continues to the next task. After EVERY task (skipped, done, or
+failed) DIR/progress.json is atomically rewritten with the schema:
+    {"done": [...], "failed": [...], "pending": [...], "last_update_task": "..."}
+where each list holds "<suite>/<task>" keys. "done" includes both tasks completed
+in this run AND tasks that were already done before this run started (skipped tasks
+are done tasks from the campaign's point of view). "pending" holds not-yet-processed
+tasks; "last_update_task" is the most recently processed key. The final stdout line
+is a SEPARATE one-line JSON summary of just this run:
+    {"tasks": N, "done": n1, "failed": n2, "skipped": n3}
+where "done" here counts only tasks freshly validated THIS run (excludes skipped).
+Exit code is 0 if no task failed this run, else 2."""
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import sys
 from pathlib import Path
@@ -17,6 +39,14 @@ from aspire.engines import AuditedEngine, CapxEngine, EngineError, FakeEngine
 from aspire.evosearch import EvosearchError
 from aspire.schemas import ExecuteResult
 from aspire.skill_library import SkillLibrary
+
+_DOMAIN_ERRORS = (ValidationReuseError, EngineError, ActorError, EvosearchError)
+
+
+def _atomic_write_json(path: Path, obj) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=1))
+    os.replace(tmp, path)
 
 
 def _build_capx_actors(prompts_dir: str, task_dir):
@@ -42,9 +72,65 @@ def _build_engine(args):
     return AuditedEngine(inner)
 
 
+def _discover_tasks(root: Path) -> list:
+    """suite/task pattern: root/*/* directories containing code.py, sorted by
+    (suite name, task name) for a deterministic, resumable dispatch order."""
+    tasks = []
+    for suite_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        for task_dir in sorted(p for p in suite_dir.iterdir() if p.is_dir()):
+            if (task_dir / "code.py").exists():
+                tasks.append(task_dir)
+    return tasks
+
+
+def _run_campaign(args, cfg: RunConfig, engine) -> int:
+    """Sequential campaign over --tasks-root: see module docstring for the
+    progress.json schema and the done/failed/skipped semantics."""
+    root = Path(args.tasks_root)
+    tasks = _discover_tasks(root)
+    keys = [f"{t.parent.name}/{t.name}" for t in tasks]
+    progress = {"done": [], "failed": [], "pending": list(keys),
+               "last_update_task": None}
+    progress_path = root / "progress.json"
+    library = SkillLibrary(Path(args.library))
+
+    done_this_run = failed_this_run = skipped_this_run = 0
+    for task_dir, key in zip(tasks, keys):
+        progress["pending"].remove(key)
+        progress["last_update_task"] = key
+        if (task_dir / "VALIDATION_DONE").exists():
+            print(f"aspire.run: skipped (done): {key}", file=sys.stderr)
+            skipped_this_run += 1
+            progress["done"].append(key)
+            _atomic_write_json(progress_path, progress)
+            continue
+
+        if args.engine == "fake":
+            actor, judge = FakeActor(), FakeJudge([])
+        else:
+            actor, judge = _build_capx_actors(args.prompts, task_dir)
+        pipe = TaskPipeline(task_dir, engine, actor, judge, library, cfg)
+        try:
+            pipe.run()
+        except _DOMAIN_ERRORS as e:
+            print(f"aspire.run: {key}: {e}", file=sys.stderr)
+            failed_this_run += 1
+            progress["failed"].append(key)
+        else:
+            done_this_run += 1
+            progress["done"].append(key)
+        _atomic_write_json(progress_path, progress)
+
+    print(json.dumps({"tasks": len(tasks), "done": done_this_run,
+                      "failed": failed_this_run, "skipped": skipped_this_run}))
+    return 0 if failed_this_run == 0 else 2
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--task-dir", required=True)
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument("--task-dir")
+    group.add_argument("--tasks-root")
     ap.add_argument("--engine", choices=("fake", "capx"), required=True)
     ap.add_argument("--library", required=True)
     ap.add_argument("--fake-scores", default="")
@@ -57,6 +143,10 @@ def main(argv=None):
 
     cfg = RunConfig()
     engine = _build_engine(args)
+
+    if args.tasks_root:
+        return _run_campaign(args, cfg, engine)
+
     if args.engine == "fake":
         actor, judge = FakeActor(), FakeJudge([])
     else:
@@ -66,7 +156,7 @@ def main(argv=None):
                         SkillLibrary(Path(args.library)), cfg)
     try:
         result = pipe.run()
-    except (ValidationReuseError, EngineError, ActorError, EvosearchError) as e:
+    except _DOMAIN_ERRORS as e:
         print(f"aspire.run: {e}", file=sys.stderr)
         return 2
     print(json.dumps({"stage_reached": result.stage_reached,

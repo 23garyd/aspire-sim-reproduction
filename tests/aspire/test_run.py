@@ -83,6 +83,26 @@ def test_cli_capx_requires_cmd_and_out_root(tmp_path):
     assert "required for --engine capx" in proc.stderr
 
 
+def test_tasks_root_campaign_skips_done_and_continues_on_failure(tmp_path):
+    root = tmp_path / "robosuite"
+    t1 = root / "lift"; t1.mkdir(parents=True); (t1 / "code.py").write_text("pass")
+    t2 = root / "stack"; t2.mkdir(); (t2 / "code.py").write_text("pass")
+    t3 = root / "door"; t3.mkdir(); (t3 / "code.py").write_text("pass")
+    (t1 / "VALIDATION_DONE").write_text('{"program": "x", "score": 1.0}')   # already done
+    proc = subprocess.run(
+        [sys.executable, "-m", "aspire.run", "--tasks-root", str(tmp_path),
+         "--engine", "fake", "--fake-scores", "0.0,1.0,0.9",
+         "--library", str(tmp_path / "lib")],
+        capture_output=True, text=True, cwd=REPO_ROOT)
+    # door: baseline 0.0 -> debug -> FakeActor exhausts -> failed (recorded, campaign continues)
+    # stack: baseline 1.0, S_val 0.9 -> done
+    summary = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert summary == {"tasks": 3, "done": 1, "failed": 1, "skipped": 1}
+    assert proc.returncode == 2
+    prog = json.loads((tmp_path / "progress.json").read_text())
+    assert "robosuite/lift" in prog["done"] or "robosuite/lift" in prog.get("skipped", prog["done"])
+
+
 def test_build_engine_wraps_with_audit(tmp_path):
     import argparse
     from aspire.engines import AuditedEngine

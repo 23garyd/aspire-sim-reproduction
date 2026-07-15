@@ -97,6 +97,9 @@ add an EXTRACTION_FAILED marker or stderr line so "extraction proposed nothing" 
 - Progress tracker + never-redispatch-done for the sequential coordinator (the
   single-GPU degenerate form of App E's dispatch loop; fleet version stays out of scope).
 
+Deferred to G5 (need real engine): fast path from successful baseline seed (needs
+per-seed outcomes), initial scene snapshot, runtime task-language check.
+
 ### Ordering rationale
 G1–G4 are GPU-free and fully testable with fakes → they proceed on the Mac immediately
 and keep every review cycle cheap. G5 is the only simhost-bound phase and was already the
