@@ -111,7 +111,7 @@ class ClaudeCodeActor:
                  f"{ctx.history_note}")
         if ctx.skills:
             extra += "\nRelevant skills:\n" + "\n".join(
-                f"- {s.name}: {s.when_to_apply}" for s in ctx.skills)
+                f"- {s.name}: {' '.join(s.when_to_apply.split())}" for s in ctx.skills)
         _run_claude(self._prompt() + extra, ctx.task_dir, model, self._timeout)
         paths = sorted(ctx.iter_dir.glob("candidate_*/code.py"),
                        key=lambda p: p.parent.name.casefold())
