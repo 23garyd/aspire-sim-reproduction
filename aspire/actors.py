@@ -133,9 +133,10 @@ class ClaudeJudge:
             low = line.strip().lower()
             if low.startswith("admit:"):
                 verdict = low.split("admit:", 1)[1].strip()
-                if verdict.startswith("yes"):
+                tok = verdict.split()[0].strip(".,;:!—-") if verdict.split() else ""
+                if tok == "yes":
                     return True
-                if verdict.startswith("no"):
+                if tok == "no":
                     return False
                 # unrecognized verdict token: keep scanning remaining lines
         raise ActorError(f"judge reply had no ADMIT line: {out[-400:]}")

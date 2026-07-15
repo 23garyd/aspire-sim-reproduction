@@ -93,6 +93,25 @@ def test_claude_judge_plain_no(tmp_path, monkeypatch):
     assert judge.admit(_skill()) is False
 
 
+def test_claude_judge_yes_prefixed_word_is_not_yes(tmp_path, monkeypatch):
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(
+        tmp_path, "echo 'ADMIT: yesterday I would have said no'\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    judge = ClaudeJudge(prompt_file=str(prompt), workdir=tmp_path)
+    with pytest.raises(ActorError, match="no ADMIT line"):
+        judge.admit(_skill())
+
+
+def test_claude_judge_unrecognized_verdict_raises(tmp_path, monkeypatch):
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(tmp_path, "echo 'ADMIT: absolutely'\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    judge = ClaudeJudge(prompt_file=str(prompt), workdir=tmp_path)
+    with pytest.raises(ActorError, match="no ADMIT line"):
+        judge.admit(_skill())
+
+
 def test_claude_actor_timeout_raises(tmp_path, monkeypatch):
     task = tmp_path / "task"; task.mkdir()
     prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
