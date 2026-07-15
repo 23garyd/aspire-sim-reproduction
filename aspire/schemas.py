@@ -44,3 +44,45 @@ class ExecuteResult:
         d = json.loads(text)
         return cls(score=d["score"], raw_dir=d.get("raw_dir", ""),
                    traces=[TraceRecord.from_dict(t) for t in d.get("traces", [])])
+
+
+class ReportError(ValueError):
+    """report.json missing, malformed, or violating the contract."""
+
+
+@dataclass(frozen=True)
+class ProposedSkill:
+    name: str
+    category: str
+    failure_signature: str
+    when_to_apply: str
+    strategy: str
+    code_sketch: str = ""
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ActorReport:
+    outcome: str                   # "success" | "fail"
+    diagnosis: str
+    code_path: str                 # final program, relative to the task dir
+    proposed_skills: tuple = ()
+
+    _REQUIRED = ("outcome", "diagnosis", "code_path")
+
+    @classmethod
+    def load(cls, path) -> "ActorReport":
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as e:
+            raise ReportError(f"cannot read report.json: {e}") from e
+        missing = [k for k in cls._REQUIRED if k not in data]
+        if missing:
+            raise ReportError(f"report.json missing fields: {missing}")
+        if data["outcome"] not in ("success", "fail"):
+            raise ReportError(f"bad outcome: {data['outcome']!r}")
+        skills = tuple(ProposedSkill(**s) for s in data.get("proposed_skills", []))
+        return cls(outcome=data["outcome"], diagnosis=data["diagnosis"],
+                   code_path=data["code_path"], proposed_skills=skills)

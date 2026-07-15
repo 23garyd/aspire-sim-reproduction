@@ -1,6 +1,8 @@
 import json
 
-from aspire.schemas import ExecuteResult, TraceRecord
+import pytest
+
+from aspire.schemas import ActorReport, ExecuteResult, ProposedSkill, ReportError, TraceRecord
 
 
 def make_trace(**kw):
@@ -23,3 +25,33 @@ def test_execute_result_json_round_trip(tmp_path):
     loaded = ExecuteResult.from_json(p.read_text())
     assert loaded == res
     assert json.loads(res.to_json())["score"] == 0.6  # plain-JSON contract for capx_execute.py
+
+
+def test_actor_report_load(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({
+        "outcome": "success", "diagnosis": "goal pose inside collision buffer",
+        "code_path": "fix_code.py",
+        "proposed_skills": [{
+            "name": "multi-angle-approach", "category": "navigation",
+            "failure_signature": "repeated PLANNING_ERROR near obstacle",
+            "when_to_apply": "nav goals fall inside collision-avoidance buffer",
+            "strategy": "rotate approach vector by 45/90/180 deg", "code_sketch": "for a in ..."}],
+    }))
+    r = ActorReport.load(p)
+    assert r.outcome == "success"
+    assert r.proposed_skills[0].category == "navigation"
+
+
+def test_actor_report_missing_field_raises(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "fail"}))
+    with pytest.raises(ReportError, match="missing"):
+        ActorReport.load(p)
+
+
+def test_actor_report_bad_outcome_raises(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "maybe", "diagnosis": "x", "code_path": "c.py"}))
+    with pytest.raises(ReportError, match="outcome"):
+        ActorReport.load(p)
