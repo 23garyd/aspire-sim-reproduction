@@ -13,7 +13,7 @@ from pathlib import Path
 from aspire.actors import ActorError, ClaudeCodeActor, ClaudeJudge, FakeActor, FakeJudge
 from aspire.config import RunConfig
 from aspire.coordinator import TaskPipeline, ValidationReuseError
-from aspire.engines import CapxEngine, EngineError, FakeEngine
+from aspire.engines import AuditedEngine, CapxEngine, EngineError, FakeEngine
 from aspire.evosearch import EvosearchError
 from aspire.schemas import ExecuteResult
 from aspire.skill_library import SkillLibrary
@@ -27,6 +27,18 @@ def _build_capx_actors(prompts_dir: str, task_dir):
     judge = ClaudeJudge(prompt_file=f"{prompts_dir}/coordinator_admission.md",
                         workdir=Path(task_dir))
     return actor, judge
+
+
+def _build_engine(args):
+    """Every program (Stage-0/1 fixes, evosearch candidates) flows through the
+    engine, so wrapping it here is the single choke point for the audit."""
+    if args.engine == "fake":
+        inner = FakeEngine([ExecuteResult(float(s))
+                            for s in args.fake_scores.split(",") if s])
+    else:
+        inner = CapxEngine(cmd_prefix=shlex.split(args.capx_cmd),
+                           out_root=Path(args.out_root))
+    return AuditedEngine(inner)
 
 
 def main(argv=None):
@@ -43,13 +55,10 @@ def main(argv=None):
         ap.error("--capx-cmd and --out-root are required for --engine capx")
 
     cfg = RunConfig()
+    engine = _build_engine(args)
     if args.engine == "fake":
-        engine = FakeEngine([ExecuteResult(float(s))
-                             for s in args.fake_scores.split(",") if s])
         actor, judge = FakeActor(), FakeJudge([])
     else:
-        engine = CapxEngine(cmd_prefix=shlex.split(args.capx_cmd),
-                            out_root=Path(args.out_root))
         actor, judge = _build_capx_actors(args.prompts, args.task_dir)
 
     pipe = TaskPipeline(Path(args.task_dir), engine, actor, judge,

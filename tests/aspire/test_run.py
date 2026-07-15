@@ -80,3 +80,15 @@ def test_cli_capx_requires_cmd_and_out_root(tmp_path):
         capture_output=True, text=True, cwd=REPO_ROOT)
     assert proc.returncode == 2
     assert "required for --engine capx" in proc.stderr
+
+
+def test_build_engine_wraps_with_audit(tmp_path):
+    import argparse
+    from aspire.engines import AuditedEngine
+    from aspire.run import _build_engine
+    ns = argparse.Namespace(engine="fake", fake_scores="1.0",
+                            capx_cmd="", out_root="")
+    assert isinstance(_build_engine(ns), AuditedEngine)
+    ns2 = argparse.Namespace(engine="capx", fake_scores="",
+                             capx_cmd="echo x", out_root=str(tmp_path))
+    assert isinstance(_build_engine(ns2), AuditedEngine)

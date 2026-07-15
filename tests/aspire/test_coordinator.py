@@ -3,7 +3,7 @@ import pytest
 from aspire.actors import FakeActor, FakeJudge
 from aspire.config import RunConfig
 from aspire.coordinator import TaskPipeline, ValidationReuseError
-from aspire.engines import FakeEngine
+from aspire.engines import AuditedEngine, FakeEngine
 from aspire.schemas import ActorReport, ExecuteResult, ProposedSkill
 from aspire.skill_library import SkillLibrary
 
@@ -161,3 +161,24 @@ def test_second_validation_marks_tainted(tmp_path):
     with pytest.raises(ValidationReuseError):
         pipe.validate(task / "code.py")
     assert (task / "TAINTED").exists()
+
+
+def test_cheating_fix_scores_zero_and_never_executes(tmp_path):
+    task = _task(tmp_path)                        # clean baseline code.py
+    engine = FakeEngine([ExecuteResult(0.4),      # Stage 0 baseline (clean, executes)
+                         # NOTE: no result scripted for the fix — it must be blocked
+                         ExecuteResult(0.4),      # evosearch baseline re-exec
+                         ExecuteResult(0.5), ExecuteResult(0.6),  # clean candidates
+                         ExecuteResult(0.9)])     # Stage 2 validation on best
+    audited = AuditedEngine(engine)
+    (task / "fix_code.py").write_text("q = env.handle.env.sim.data.qpos  # cheat")
+    actor = FakeActor(reports=[ActorReport(outcome="success", diagnosis="d",
+                                           code_path="fix_code.py")],
+                      candidate_sources=[["cand1", "cand2"]])
+    lib = SkillLibrary(tmp_path / "lib")
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=1, s_dbg=[0, 1], s_val=[100, 101])
+    result = TaskPipeline(task, audited, actor, FakeJudge([]), lib, cfg).run()
+    # cheat fix audited out (score 0 < baseline 0.4) -> evosearch wins with 0.6
+    assert result.dbg_score == 0.6
+    assert (task / "fix_code.py.AUDIT_REJECTED").exists()
+    assert result.val_score == 0.9
