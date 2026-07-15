@@ -76,6 +76,19 @@ def test_relevant_skills_falls_back_to_all_when_no_failures(tmp_path):
     assert [s.name for s in relevant_skills(lib, [_tr()])] == ["a-skill"]
 
 
+def test_media_copy_preserves_relative_subpaths_no_collision(tmp_path):
+    task = tmp_path / "s" / "t"; task.mkdir(parents=True)
+    raw = tmp_path / "raw"
+    (raw / "a").mkdir(parents=True); (raw / "b").mkdir(parents=True)
+    (raw / "a" / "kf.png").write_bytes(b"A")
+    (raw / "b" / "kf.png").write_bytes(b"B")
+    res = ExecuteResult(score=0.5, raw_dir=str(raw),
+                        traces=[_tr(media=["a/kf.png"]), _tr(step=2, media=["b/kf.png"])])
+    write_execution_context(task, res)
+    assert (task / "traces" / "media" / "a" / "kf.png").read_bytes() == b"A"
+    assert (task / "traces" / "media" / "b" / "kf.png").read_bytes() == b"B"
+
+
 def test_write_skills_context(tmp_path):
     task = tmp_path / "s" / "t"; task.mkdir(parents=True)
     write_skills_context(task, [Skill(name="x-skill", category="c",

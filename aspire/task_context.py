@@ -40,7 +40,9 @@ def write_execution_context(task_dir, result) -> None:
                 continue
             src = raw_dir / m
             if src.exists():
-                shutil.copyfile(src, media_dir / Path(m).name)
+                dst = media_dir / m
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(src, dst)
 
 
 def write_task_metadata(task_dir, task_language: str = "") -> None:

@@ -218,6 +218,38 @@ def test_run_materializes_task_context_for_actor(tmp_path):
     assert "multi-angle-approach" in (task / "skills.md").read_text()
 
 
+def test_second_debug_round_context_reflects_first_fix_failure(tmp_path):
+    from aspire.schemas import TraceRecord
+    from aspire.skill_library import Skill
+    task = _task(tmp_path)
+    base_fail = TraceRecord(step=1, function="navigate_to_pose", args={}, status="error",
+                            result_summary="PLANNING_ERROR near table", duration_ms=1.0,
+                            media=[])
+    fix1_fail = TraceRecord(step=1, function="grasp_object", args={}, status="error",
+                            result_summary="GRIPPER_SLIP on lid", duration_ms=1.0,
+                            media=[])
+    engine = FakeEngine([ExecuteResult(0.0, traces=[base_fail]),   # Stage 0
+                         ExecuteResult(0.2, traces=[fix1_fail]),   # round-1 fix
+                         ExecuteResult(1.0),                       # round-2 fix
+                         ExecuteResult(0.9)])                      # S_val
+    (task / "fix_code.py").write_text("attempt()")
+    lib = SkillLibrary(tmp_path / "lib")
+    lib.add(Skill(name="slip-recovery", category="grasping",
+                  failure_signature="GRIPPER_SLIP under load",
+                  when_to_apply="w", strategy="s"))
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=2, s_dbg=[0, 1], s_val=[100, 101])
+    actor = FakeActor(reports=[
+        ActorReport(outcome="fail", diagnosis="d1", code_path="fix_code.py"),
+        ActorReport(outcome="success", diagnosis="d2", code_path="fix_code.py")])
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([]), lib, cfg)
+    result = pipe.run()
+    assert result.val_score == 0.9
+    # round-2 skills.md was retrieved from round-1's GRIPPER_SLIP failure
+    assert "slip-recovery" in (task / "skills.md").read_text()
+    # traces/ holds round-1's failure (written at end of round 1), not the winning round-2 trace
+    assert "GRIPPER_SLIP" in (task / "traces" / "summary.txt").read_text()
+
+
 def test_admission_passes_similar_skills_to_judge(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)
