@@ -102,7 +102,8 @@ class TaskPipeline:
                               val_score=marker["score"],
                               program=marker["program"],
                               admitted_skills=(),
-                              tainted=(self.task_dir / "TAINTED").exists())
+                              tainted=(self.task_dir / "TAINTED").exists(),
+                              blocked=(self.task_dir / "BLOCKED.md").exists())
 
         started = self.task_dir / "VALIDATION_STARTED"
         if started.exists():
@@ -110,6 +111,12 @@ class TaskPipeline:
             raise ValidationReuseError(
                 f"validation was interrupted for {self.task_dir}; "
                 "S_val possibly spent; manual review required")
+
+        # Task dirs are reused (campaign retry, crash before STARTED); a stale
+        # BLOCKED.md from a prior attempt must not truncate THIS run's debug loop.
+        # Cleared after the DONE gate above so a resumed-done task still reports
+        # its historical blocked state. Mirrors AuditedEngine's stale-marker clear.
+        (self.task_dir / "BLOCKED.md").unlink(missing_ok=True)
 
         baseline = self.task_dir / "code.py"
         r = self.engine.execute(baseline, self.cfg.s_dbg)

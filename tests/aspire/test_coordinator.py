@@ -572,6 +572,31 @@ def test_attempt_cap_violation_blocks_report_skills(tmp_path):
     assert (task / "DISCIPLINE_VIOLATION").exists()
 
 
+def test_stale_blocked_md_cleared_on_fresh_run(tmp_path):
+    task = _task(tmp_path)
+    (task / "BLOCKED.md").write_text("# stale from prior attempt")
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    # two decisions: extraction skill + winning report skill are both judged
+    result = TaskPipeline(task, engine, actor, FakeJudge([True, True]), lib, CFG).run()
+    assert len(actor.debug_calls) == 1          # debug loop ran (not pre-truncated)
+    assert result.blocked is False
+    assert result.val_score == 1.0
+
+
+def test_resume_reports_blocked_from_marker(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(1.0), ExecuteResult(0.9)])
+    lib = SkillLibrary(tmp_path / "lib")
+    TaskPipeline(task, engine, FakeActor(), FakeJudge([]), lib, CFG).run()
+    (task / "BLOCKED.md").write_text("# blocked during the original run")
+    second = TaskPipeline(task, FakeEngine([]), FakeActor(), FakeJudge([]), lib, CFG).run()
+    assert second.blocked is True
+
+
 def test_extraction_failure_writes_marker(tmp_path):
     task = _task(tmp_path)
     engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
