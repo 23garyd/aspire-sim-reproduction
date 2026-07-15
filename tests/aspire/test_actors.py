@@ -1,0 +1,69 @@
+import json
+import os
+import stat
+
+import pytest
+
+from aspire.actors import (ActorError, ClaudeCodeActor, ClaudeJudge, FakeActor,
+                           FakeJudge, ProposeContext)
+from aspire.schemas import ActorReport, ProposedSkill
+
+
+def _report_dict(outcome="success"):
+    return {"outcome": outcome, "diagnosis": "d", "code_path": "fix_code.py",
+            "proposed_skills": []}
+
+
+def test_fake_actor_writes_report_and_candidates(tmp_path):
+    rep = ActorReport(outcome="fail", diagnosis="d", code_path="code.py")
+    actor = FakeActor(reports=[rep], candidate_sources=[["print(1)", "print(2)"]])
+    assert actor.run_debug(tmp_path, model="opus") == rep
+    ctx = ProposeContext(task_dir=tmp_path, iter_dir=tmp_path / "iter_00",
+                         top3=[], skills=[], k=2)
+    paths = actor.propose(ctx, model="sonnet")
+    assert [p.read_text() for p in paths] == ["print(1)", "print(2)"]
+    assert paths[0].parent.name == "candidate_A" and paths[1].parent.name == "candidate_B"
+
+
+def _make_shim(tmp_path, body):
+    shim = tmp_path / "bin" / "claude"
+    shim.parent.mkdir(exist_ok=True)
+    shim.write_text("#!/bin/bash\n" + body)
+    shim.chmod(shim.stat().st_mode | stat.S_IEXEC)
+    return shim.parent
+
+
+def test_claude_actor_invokes_cli_and_loads_report(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(
+        tmp_path,
+        'echo "$@" > cli_args.txt\n'
+        f"echo '{json.dumps(_report_dict())}' > report.json\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
+    rep = actor.run_debug(task, model="opus")
+    assert rep.outcome == "success"
+    args = (task / "cli_args.txt").read_text()
+    assert "--model opus" in args and "-p" in args
+
+
+def test_claude_actor_no_report_raises(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(tmp_path, "true\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
+    with pytest.raises(ActorError, match="report.json"):
+        actor.run_debug(task, model="opus")
+
+
+def test_fake_judge_and_claude_judge_parse(tmp_path, monkeypatch):
+    skill = ProposedSkill(name="n", category="c", failure_signature="f",
+                          when_to_apply="w", strategy="s")
+    assert FakeJudge([True]).admit(skill) is True
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    bin_dir = _make_shim(tmp_path, "echo 'ADMIT: yes — reusable navigation pattern'\n")
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    assert ClaudeJudge(prompt_file=str(prompt),
+                       workdir=tmp_path).admit(skill) is True
