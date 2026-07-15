@@ -47,6 +47,7 @@ class TaskResult:
     program: str              # path of the validated program
     admitted_skills: tuple = ()
     tainted: bool = False
+    blocked: bool = False     # actor wrote BLOCKED.md during Stage 1
 
 
 class TaskPipeline:
@@ -123,6 +124,7 @@ class TaskPipeline:
         write_execution_context(self.task_dir, r)
         write_task_metadata(self.task_dir, task_language=self.task_language)
 
+        blocked = False
         if dbg_score < self.cfg.theta:
             for _ in range(self.cfg.debug_rounds):          # Stage 1
                 write_skills_context(self.task_dir,
@@ -135,6 +137,11 @@ class TaskPipeline:
                     dbg_score, program = r.score, fix
                     winning_result, winning_report = r, report
                     winning_bytes = fix.read_bytes()
+                # BLOCKED.md: the actor may have partially fixed before blocking, so
+                # this round's fix is still executed (above) before we stop rounds.
+                if (self.task_dir / "BLOCKED.md").exists():
+                    blocked = True
+                    break
                 if dbg_score >= self.cfg.theta:
                     break
                 write_execution_context(self.task_dir, r)   # refresh for next round
@@ -196,11 +203,24 @@ class TaskPipeline:
                 extraction = self.actor.extract(self.task_dir,
                                                 model=self.cfg.model_repair)
                 candidates.extend(extraction.proposed_skills)
-            except ActorError:
-                pass   # extraction is best-effort post-validation; winner skills
-                       # still admitted below
+            except ActorError as e:
+                # extraction is best-effort post-validation; winner skills still
+                # admitted below. Marker distinguishes "crashed" from "proposed
+                # nothing" (G4 re-review carry-forward).
+                _atomic_write(self.task_dir / "EXTRACTION_FAILED", str(e))
         if winning_report is not None:
-            candidates.extend(winning_report.proposed_skills)
+            # Appendix E three-attempt cap: an actor that blew past max_seed_attempts
+            # on any seed broke repair discipline — its proposed_skills (but not the
+            # separately-vetted extraction candidates above) are ineligible.
+            violation = next((sa for sa in winning_report.seed_attempts
+                              if sa[1] > self.cfg.max_seed_attempts), None)
+            if violation is not None:
+                seed, attempts = violation
+                _atomic_write(self.task_dir / "DISCIPLINE_VIOLATION",
+                             f"seed {seed} used {attempts} attempts "
+                             f"(> max_seed_attempts={self.cfg.max_seed_attempts})")
+            else:
+                candidates.extend(winning_report.proposed_skills)
 
         provenance = (f"{self.task_dir.parent.name}/{self.task_dir.name} "
                       f"dbg={dbg_score:.2f} val={val.score:.2f}")
@@ -224,4 +244,4 @@ class TaskPipeline:
 
         return TaskResult(stage_reached="validated", dbg_score=dbg_score,
                           val_score=val.score, program=str(program),
-                          admitted_skills=tuple(admitted))
+                          admitted_skills=tuple(admitted), blocked=blocked)

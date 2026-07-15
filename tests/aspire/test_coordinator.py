@@ -528,3 +528,57 @@ def test_admission_passes_similar_skills_to_judge(tmp_path):
                         judge, lib, CFG)
     pipe.run()
     assert judge.admit_calls == [("multi-angle-approach", ("old-nav-skill",))]
+
+
+def test_blocked_md_stops_debug_rounds(tmp_path):
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=3, s_dbg=[0, 1], s_val=[100, 101])
+
+    class BlockingActor(FakeActor):
+        def run_debug(self, task_dir, model):
+            rep = super().run_debug(task_dir, model)
+            (task_dir / "BLOCKED.md").write_text("# blocked: fixture unreachable")
+            return rep
+
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(0.4),   # S0 + round-1 fix
+                         ExecuteResult(0.0),                        # evo baseline
+                         ExecuteResult(0.5), ExecuteResult(0.2),    # candidates
+                         ExecuteResult(0.9)])                       # S_val
+    actor = BlockingActor(reports=[ActorReport(outcome="fail", diagnosis="d",
+                                               code_path="fix_code.py")],
+                          candidate_sources=[["a", "b"]],
+                          extraction_reports=[_extraction_report()])
+    (task / "fix_code.py").write_text("partial()")
+    lib = SkillLibrary(tmp_path / "lib")
+    result = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, cfg).run()
+    assert len(actor.debug_calls) == 1, "no further debug rounds after BLOCKED.md"
+    assert result.blocked is True
+    assert result.val_score == 0.9
+
+
+def test_attempt_cap_violation_blocks_report_skills(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    over_cap = ActorReport(outcome="success", diagnosis="d", code_path="fix_code.py",
+                           proposed_skills=_skillful_report().proposed_skills,
+                           seed_attempts=((0, 5), (1, 1)))          # 5 > default cap 3
+    actor = FakeActor(reports=[over_cap], extraction_reports=[_extraction_report(name="ok-skill")])
+    lib = SkillLibrary(tmp_path / "lib")
+    TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG).run()
+    names = [s.name for s in lib.load_all()]
+    assert "ok-skill" in names                       # extraction skills unaffected
+    assert "multi-angle-approach" not in names       # capped report's skills blocked
+    assert (task / "DISCIPLINE_VIOLATION").exists()
+
+
+def test_extraction_failure_writes_marker(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()])   # NO extraction reports -> extract raises
+    lib = SkillLibrary(tmp_path / "lib")
+    result = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG).run()
+    assert (task / "EXTRACTION_FAILED").exists()
+    assert "extraction" in (task / "EXTRACTION_FAILED").read_text().lower()
+    assert result.val_score == 1.0
