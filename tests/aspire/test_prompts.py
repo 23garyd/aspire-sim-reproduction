@@ -30,3 +30,11 @@ def test_evosearch_prompt_requires_reading_top_programs():
 def test_admission_prompt_demands_admit_line():
     text = (PROMPTS / "coordinator_admission.md").read_text()
     assert "ADMIT:" in text
+
+
+def test_extract_prompt_exists_with_contract():
+    text = (PROMPTS / "extract_patterns.md").read_text()
+    assert "extraction_report.json" in text
+    assert "winner/trace.json" in text or "winner/" in text
+    assert ">=2 task types" in text
+    assert "env.handle.env.sim" in text

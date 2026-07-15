@@ -68,6 +68,7 @@ def test_capx_actor_wired_with_evosearch_propose_prompt(tmp_path):
     actor, judge = _build_capx_actors("prompts", tmp_path)
     assert actor._prompt_file.endswith("actor_debug.md")
     assert actor._propose_prompt_file.endswith("actor_evosearch.md")
+    assert actor._extract_prompt_file.endswith("extract_patterns.md")
 
 
 def test_cli_capx_requires_cmd_and_out_root(tmp_path):

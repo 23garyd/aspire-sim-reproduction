@@ -23,7 +23,8 @@ def _build_capx_actors(prompts_dir: str, task_dir):
     """Actor: debug prompt for run_debug, evosearch prompt for propose."""
     actor = ClaudeCodeActor(
         prompt_file=f"{prompts_dir}/actor_debug.md",
-        propose_prompt_file=f"{prompts_dir}/actor_evosearch.md")
+        propose_prompt_file=f"{prompts_dir}/actor_evosearch.md",
+        extract_prompt_file=f"{prompts_dir}/extract_patterns.md")
     judge = ClaudeJudge(prompt_file=f"{prompts_dir}/coordinator_admission.md",
                         workdir=Path(task_dir))
     return actor, judge
