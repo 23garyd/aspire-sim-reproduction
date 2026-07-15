@@ -55,3 +55,21 @@ def test_actor_report_bad_outcome_raises(tmp_path):
     p.write_text(json.dumps({"outcome": "maybe", "diagnosis": "x", "code_path": "c.py"}))
     with pytest.raises(ReportError, match="outcome"):
         ActorReport.load(p)
+
+
+def test_actor_report_bad_skill_entry_raises(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "fail", "diagnosis": "x", "code_path": "c.py",
+                             "proposed_skills": [{"name": "n"}]}))
+    with pytest.raises(ReportError, match="proposed_skill"):
+        ActorReport.load(p)
+
+
+def test_actor_report_unknown_skill_key_raises(tmp_path):
+    p = tmp_path / "report.json"
+    p.write_text(json.dumps({"outcome": "fail", "diagnosis": "x", "code_path": "c.py",
+                             "proposed_skills": [{"name": "n", "category": "c",
+                                                  "failure_signature": "f", "when_to_apply": "w",
+                                                  "strategy": "s", "bogus": 1}]}))
+    with pytest.raises(ReportError, match="proposed_skill"):
+        ActorReport.load(p)

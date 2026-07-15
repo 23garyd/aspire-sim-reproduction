@@ -83,6 +83,9 @@ class ActorReport:
             raise ReportError(f"report.json missing fields: {missing}")
         if data["outcome"] not in ("success", "fail"):
             raise ReportError(f"bad outcome: {data['outcome']!r}")
-        skills = tuple(ProposedSkill(**s) for s in data.get("proposed_skills", []))
+        try:
+            skills = tuple(ProposedSkill(**s) for s in data.get("proposed_skills", []))
+        except TypeError as e:
+            raise ReportError(f"bad proposed_skill entry: {e}") from e
         return cls(outcome=data["outcome"], diagnosis=data["diagnosis"],
                    code_path=data["code_path"], proposed_skills=skills)
