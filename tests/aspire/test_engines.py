@@ -58,3 +58,17 @@ def test_capx_engine_missing_result_raises(tmp_path):
     eng = CapxEngine(cmd_prefix=[sys.executable, str(runner)], out_root=tmp_path / "o")
     with pytest.raises(EngineError, match="result.json"):
         eng.execute(prog, [0])
+
+
+def test_capx_engine_malformed_result_raises_engine_error(tmp_path):
+    prog = tmp_path / "code.py"; prog.write_text("pass")
+    # stub runner: writes a truncated (torn) result.json into --out-dir
+    runner = tmp_path / "torn.py"
+    runner.write_text(
+        "import sys,pathlib\n"
+        "a=dict(zip(sys.argv[1::2],sys.argv[2::2]))\n"
+        "d=pathlib.Path(a['--out-dir']); d.mkdir(parents=True,exist_ok=True)\n"
+        "(d/'result.json').write_text('{\"trunca')\n")
+    eng = CapxEngine(cmd_prefix=[sys.executable, str(runner)], out_root=tmp_path / "o")
+    with pytest.raises(EngineError, match="malformed"):
+        eng.execute(prog, [0])

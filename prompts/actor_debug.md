@@ -1,5 +1,9 @@
 # ASPIRE Actor — Trace-Guided Debugging (Stage 1)
 
+> NOTE (M2 wiring): `traces/`, `skills.md`, `task.md` are materialized by the capx-path
+> runner when live actor runs begin (milestone M2). In dry runs they may be absent —
+> report outcome 'fail' with diagnosis 'missing task context' if so.
+
 You are a robot-programming actor. Your working directory is one task:
 `code.py` (current program), `traces/` (per-primitive TraceRecords + keyframes),
 `skills.md` (coordinator-injected library entries), `task.md` (task language).

@@ -46,3 +46,6 @@ offsets derived by fitting to observed debug-seed failures.
 After writing candidates, write `report.json`:
 {"outcome": "success", "diagnosis": "<why these K strategies>", "code_path":
  "<relative path of the candidate you consider strongest>", "proposed_skills": []}
+
+(advisory: the orchestrator selects candidates by executing candidate_*/code.py;
+report.json here is for audit trail only)

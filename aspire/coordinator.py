@@ -2,7 +2,9 @@
 Stage 0 baseline on S_dbg -> Stage 1 actor debug rounds -> evosearch fallback ->
 Stage 2 validation on S_val (EXACTLY ONCE) -> mechanical audit -> judge -> admission.
 On a single-GPU box the paper's device-dispatch loop degenerates to sequential tasks;
-aspire/run.py iterates TaskPipeline over a task list."""
+aspire/run.py iterates TaskPipeline over a task list.
+Task context files (traces/, skills.md, task.md) are materialized by the engine/runner
+layer at M2; TaskPipeline does not write them."""
 from __future__ import annotations
 
 import json

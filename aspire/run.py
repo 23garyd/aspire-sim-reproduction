@@ -10,10 +10,11 @@ import shlex
 import sys
 from pathlib import Path
 
-from aspire.actors import ClaudeCodeActor, ClaudeJudge, FakeActor, FakeJudge
+from aspire.actors import ActorError, ClaudeCodeActor, ClaudeJudge, FakeActor, FakeJudge
 from aspire.config import RunConfig
-from aspire.coordinator import TaskPipeline
-from aspire.engines import CapxEngine, FakeEngine
+from aspire.coordinator import TaskPipeline, ValidationReuseError
+from aspire.engines import CapxEngine, EngineError, FakeEngine
+from aspire.evosearch import EvosearchError
 from aspire.schemas import ExecuteResult
 from aspire.skill_library import SkillLibrary
 
@@ -28,6 +29,8 @@ def main(argv=None):
     ap.add_argument("--out-root", default="")
     ap.add_argument("--prompts", default="prompts")
     args = ap.parse_args(argv)
+    if args.engine == "capx" and (not args.capx_cmd or not args.out_root):
+        ap.error("--capx-cmd and --out-root are required for --engine capx")
 
     cfg = RunConfig()
     if args.engine == "fake":
@@ -43,7 +46,11 @@ def main(argv=None):
 
     pipe = TaskPipeline(Path(args.task_dir), engine, actor, judge,
                         SkillLibrary(Path(args.library)), cfg)
-    result = pipe.run()
+    try:
+        result = pipe.run()
+    except (ValidationReuseError, EngineError, ActorError, EvosearchError) as e:
+        print(f"aspire.run: {e}", file=sys.stderr)
+        return 2
     print(json.dumps({"stage_reached": result.stage_reached,
                       "dbg_score": result.dbg_score, "val_score": result.val_score,
                       "program": result.program, "tainted": result.tainted,

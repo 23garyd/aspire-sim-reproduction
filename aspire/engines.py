@@ -2,6 +2,7 @@
 out to scripts/capx_execute.py inside the cap-x venv on simhost and reads result.json."""
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Protocol
@@ -58,4 +59,7 @@ class CapxEngine:
             raise EngineError(
                 f"engine produced no result.json (exit {proc.returncode}); "
                 f"stderr tail: {proc.stderr[-800:]}")
-        return ExecuteResult.from_json(result_file.read_text())
+        try:
+            return ExecuteResult.from_json(result_file.read_text())
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            raise EngineError(f"malformed result.json: {e}") from e

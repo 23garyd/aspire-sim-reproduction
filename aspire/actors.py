@@ -109,6 +109,9 @@ class ClaudeCodeActor:
                  f"{ctx.iter_dir}/candidate_<LETTER>/code.py (A..). "
                  f"Top programs so far: {[(str(p), s) for p, s in ctx.top3]}. "
                  f"{ctx.history_note}")
+        if ctx.skills:
+            extra += "\nRelevant skills:\n" + "\n".join(
+                f"- {s.name}: {s.when_to_apply}" for s in ctx.skills)
         _run_claude(self._prompt() + extra, ctx.task_dir, model, self._timeout)
         paths = sorted(ctx.iter_dir.glob("candidate_*/code.py"),
                        key=lambda p: p.parent.name.casefold())

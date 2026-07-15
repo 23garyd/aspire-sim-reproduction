@@ -9,6 +9,7 @@ the contract is testable without CaP-X. This file must stay stdlib-only so it ru
 any venv."""
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -42,7 +43,9 @@ def main():
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    seeds = [int(s) for s in args.seeds.split(",")]
+    seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
+    if not seeds:
+        ap.error("--seeds must be a non-empty comma list")
 
     successes, all_traces = 0, []
     for seed in seeds:
@@ -53,9 +56,11 @@ def main():
         successes += bool(ok)
         all_traces.extend(traces)
 
-    (out_dir / "result.json").write_text(json.dumps(
+    tmp = out_dir / "result.json.tmp"
+    tmp.write_text(json.dumps(
         {"score": successes / len(seeds), "raw_dir": str(out_dir),
          "traces": all_traces}, indent=1))
+    os.replace(tmp, out_dir / "result.json")     # atomic: no torn result.json
 
 
 if __name__ == "__main__":

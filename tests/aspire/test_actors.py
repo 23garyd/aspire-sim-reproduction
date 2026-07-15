@@ -165,3 +165,26 @@ def test_claude_propose_happy_path(tmp_path, monkeypatch):
     paths = actor.propose(ctx, model="sonnet")
     assert [p.parent.name for p in paths] == ["candidate_A", "candidate_B"]
     assert [p.read_text().strip() for p in paths] == ["print(0)", "print(1)"]
+
+
+def test_claude_propose_injects_coordinator_skills_into_prompt(tmp_path, monkeypatch):
+    from aspire.skill_library import Skill
+    task = tmp_path / "task"; task.mkdir()
+    prompt = tmp_path / "p.md"; prompt.write_text("do the thing")
+    iter_dir = tmp_path / "iter_00"
+    body = (
+        'echo "$@" > cli_args.txt\n'
+        f"mkdir -p '{iter_dir}/candidate_A'\n"
+        f"echo 'print(0)' > '{iter_dir}/candidate_A/code.py'\n")
+    bin_dir = _make_shim(tmp_path, body)
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(prompt), timeout_s=30)
+    skill = Skill(name="multi-angle-approach", category="navigation",
+                  failure_signature="PLANNING_ERROR", when_to_apply="near obstacle",
+                  strategy="rotate approach")
+    ctx = ProposeContext(task_dir=task, iter_dir=iter_dir,
+                         top3=[], skills=[skill], k=1)
+    actor.propose(ctx, model="sonnet")
+    args = (task / "cli_args.txt").read_text()
+    assert "multi-angle-approach" in args
+    assert "near obstacle" in args
