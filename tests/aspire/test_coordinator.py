@@ -419,6 +419,67 @@ def test_dedup_retrieval_is_keyword_ranked(tmp_path):
     assert existing_names == ("zzz-relevant",)
 
 
+def test_losing_second_round_skills_not_admitted(tmp_path):
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=2, s_dbg=[0, 1], s_val=[100, 101])
+    engine = FakeEngine([ExecuteResult(0.0),   # Stage 0
+                         ExecuteResult(0.6),   # round-1 fix improves -> winner so far
+                         ExecuteResult(0.2),   # round-2 fix REGRESSES
+                         ExecuteResult(0.0),   # evosearch baseline
+                         ExecuteResult(0.1), ExecuteResult(0.1),  # candidates lose too
+                         ExecuteResult(0.9)])  # S_val on round-1 fix
+    (task / "fix_code.py").write_text("round_code()")
+    r1 = ActorReport(outcome="success", diagnosis="d1", code_path="fix_code.py",
+                     proposed_skills=(ProposedSkill(name="winner-skill",
+                         category="navigation", failure_signature="f1",
+                         when_to_apply="w", strategy="s"),))
+    r2 = ActorReport(outcome="fail", diagnosis="d2", code_path="fix_code.py",
+                     proposed_skills=(ProposedSkill(name="loser-skill",
+                         category="navigation", failure_signature="f2",
+                         when_to_apply="w", strategy="s"),))
+    actor = FakeActor(reports=[r1, r2], candidate_sources=[["a", "b"]],
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, cfg)
+    pipe.run()
+    names = [s.name for s in lib.load_all()]
+    assert "winner-skill" in names       # round-1 (the validated winner) skills admitted
+    assert "loser-skill" not in names    # round-2 (losing) skills blocked
+
+
+def test_extraction_failure_degrades_gracefully(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()])   # NO extraction reports: extract raises
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG)
+    result = pipe.run()                               # must not fail the run
+    assert result.val_score == 1.0
+    assert [s.name for s in lib.load_all()] == ["multi-angle-approach"]
+    assert actor.extract_calls, "extraction was attempted (best-effort)"
+
+
+def test_same_name_judged_once_per_run(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    # extraction proposes the SAME name as the winning report's skill:
+    dup_ext = ActorReport(outcome="success", diagnosis="d", code_path="fix_code.py",
+                          proposed_skills=(ProposedSkill(
+                              name="multi-angle-approach", category="navigation",
+                              failure_signature="fx", when_to_apply="wx", strategy="sx"),))
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[dup_ext])
+    judge = FakeJudge([False])           # ONE decision; a re-consult would raise on pop
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, judge, lib, CFG)
+    pipe.run()
+    assert len(judge.admit_calls) == 1   # judged once, not re-judged after rejection
+    assert lib.load_all() == []
+
+
 def test_admission_passes_similar_skills_to_judge(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)

@@ -79,10 +79,10 @@ class ActorReport:
         try:
             data = json.loads(path.read_text())
         except (OSError, json.JSONDecodeError) as e:
-            raise ReportError(f"cannot read report.json: {e}") from e
+            raise ReportError(f"cannot read {path.name}: {e}") from e
         missing = [k for k in cls._REQUIRED if k not in data]
         if missing:
-            raise ReportError(f"report.json missing fields: {missing}")
+            raise ReportError(f"{path.name} missing fields: {missing}")
         if data["outcome"] not in ("success", "fail"):
             raise ReportError(f"bad outcome: {data['outcome']!r}")
         try:

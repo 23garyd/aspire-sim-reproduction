@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from aspire.actors import ActorError
 from aspire.audit import audit_code
 from aspire.config import RunConfig
 from aspire.evosearch import evosearch
@@ -108,6 +109,7 @@ class TaskPipeline:
         dbg_score, program, report = r.score, baseline, None
         latest = r
         winning_result = r          # bundle of the program currently in the lead
+        winning_report = None       # Stage-1 report of the program currently in the lead
         write_execution_context(self.task_dir, r)
         write_task_metadata(self.task_dir, task_language=self.task_language)
 
@@ -121,7 +123,7 @@ class TaskPipeline:
                 latest = r
                 if r.score > dbg_score:
                     dbg_score, program = r.score, fix
-                    winning_result = r
+                    winning_result, winning_report = r, report
                 if dbg_score >= self.cfg.theta:
                     break
                 write_execution_context(self.task_dir, r)   # refresh for next round
@@ -135,7 +137,9 @@ class TaskPipeline:
             # disk-checkpointed, so prefer it on ties for resumability.
             if best.score >= dbg_score:
                 dbg_score, program = best.score, best.path
-                winning_result = None   # evosearch persists its own bundle at task level
+                # evosearch persists its own bundle at task level; no Stage-1
+                # report describes this program, so both trackers reset:
+                winning_result, winning_report = None, None
 
         # G3 binding: persist the debug-winner's trace bundle BEFORE validation so a
         # later phase (ExtractValidatedPatterns) can read it; validate() adds the
@@ -161,36 +165,41 @@ class TaskPipeline:
         # Algorithm 1 line 17 (ExtractValidatedPatterns): run the extraction actor
         # once per task whenever a repair happened (Stage-1 rounds and/or evosearch),
         # over the VALIDATED winner's evidence in winner/. Stage-1's own proposed
-        # skills are admitted only if that Stage-1 repair is the validated winner —
-        # otherwise a losing Stage-1 repair must not leak skills into the library.
+        # skills are admitted only from the WINNING round's report — a losing repair
+        # (any round) must not leak skills into the library.
         admitted = []
         candidates = []
         repair_happened = (report is not None) or evosearch_ran
         if repair_happened:
-            extraction = self.actor.extract(self.task_dir, model=self.cfg.model_repair)
-            candidates.extend(extraction.proposed_skills)
-        if (report is not None and winning_result is not None
-                and str(program).endswith(report.code_path)):
-            candidates.extend(report.proposed_skills)
+            try:
+                extraction = self.actor.extract(self.task_dir,
+                                                model=self.cfg.model_repair)
+                candidates.extend(extraction.proposed_skills)
+            except ActorError:
+                pass   # extraction is best-effort post-validation; winner skills
+                       # still admitted below
+        if winning_report is not None:
+            candidates.extend(winning_report.proposed_skills)
 
         provenance = (f"{self.task_dir.parent.name}/{self.task_dir.name} "
                       f"dbg={dbg_score:.2f} val={val.score:.2f}")
-        admitted_names = set()
+        judged_names = set()
         for ps in candidates:
-            if ps.name in admitted_names:
-                continue                                    # dedup within this run
+            if ps.name in judged_names:
+                continue                                    # judged once per run
             if audit_code(ps.code_sketch):
                 continue                                    # mechanical reject, no judge
-            kw = [w for w in re.findall(r"[a-z0-9]+",
-                  (ps.failure_signature + " " + ps.when_to_apply).lower())
-                  if len(w) >= 4][:8]
+            kw = list(dict.fromkeys(
+                w for w in re.findall(r"[a-z0-9]+",
+                (ps.failure_signature + " " + ps.when_to_apply).lower())
+                if len(w) >= 4))[:8]
             similar = (self.library.retrieve(categories=[ps.category], keywords=kw)[:5]
                        or self.library.retrieve(categories=[ps.category])[:5])
+            judged_names.add(ps.name)
             if self.judge.admit(ps, existing=similar):
                 skill = Skill.from_proposed(ps, provenance=provenance)
                 self.library.add(skill)
                 admitted.append(skill)
-                admitted_names.add(ps.name)
 
         return TaskResult(stage_reached="validated", dbg_score=dbg_score,
                           val_score=val.score, program=str(program),

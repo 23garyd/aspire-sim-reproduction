@@ -111,7 +111,11 @@ class ClaudeCodeActor:
         return Path(self._propose_prompt_file or self._prompt_file).read_text()
 
     def _extract_prompt(self) -> str:
-        return Path(self._extract_prompt_file or self._prompt_file).read_text()
+        # No fallback to the debug prompt: it demands report.json, which would
+        # clobber Stage-1's artifact and never produce extraction_report.json.
+        if self._extract_prompt_file is None:
+            raise ActorError("extract_prompt_file not configured")
+        return Path(self._extract_prompt_file).read_text()
 
     def run_debug(self, task_dir: Path, model: str) -> ActorReport:
         _run_claude(self._prompt(), task_dir, model, self._timeout)

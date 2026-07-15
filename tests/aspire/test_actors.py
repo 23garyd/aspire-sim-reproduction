@@ -256,6 +256,13 @@ def test_claude_actor_extract_uses_extract_prompt_and_distinct_report(tmp_path, 
     assert "EXTRACT_MARK" in args and "DEBUG_MARK" not in args
 
 
+def test_claude_actor_extract_without_prompt_file_raises(tmp_path):
+    p = tmp_path / "p.md"; p.write_text("x")
+    actor = ClaudeCodeActor(prompt_file=str(p), timeout_s=30)
+    with pytest.raises(ActorError, match="extract_prompt_file not configured"):
+        actor.extract(tmp_path, model="opus")
+
+
 def test_claude_actor_extract_missing_report_raises(tmp_path, monkeypatch):
     task = tmp_path / "task"; task.mkdir()
     p = tmp_path / "p.md"; p.write_text("x")

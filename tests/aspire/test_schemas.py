@@ -93,6 +93,17 @@ def test_actor_report_fields_default_when_absent(tmp_path):
     assert r.debug_validation_rate == -1.0 and r.seed_attempts == ()
 
 
+def test_actor_report_errors_name_the_actual_file(tmp_path):
+    p = tmp_path / "extraction_report.json"
+    p.write_text(json.dumps({"outcome": "fail"}))         # missing required fields
+    with pytest.raises(ReportError, match="extraction_report.json"):
+        ActorReport.load(p)
+    q = tmp_path / "other_report.json"
+    q.write_text("{not json")
+    with pytest.raises(ReportError, match="other_report.json"):
+        ActorReport.load(q)
+
+
 def test_actor_report_malformed_rate_raises(tmp_path):
     p = tmp_path / "report.json"
     p.write_text(json.dumps({"outcome": "fail", "diagnosis": "d", "code_path": "c.py",
