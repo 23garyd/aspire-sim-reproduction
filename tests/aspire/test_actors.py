@@ -167,6 +167,49 @@ def test_claude_propose_happy_path(tmp_path, monkeypatch):
     assert [p.read_text().strip() for p in paths] == ["print(0)", "print(1)"]
 
 
+def test_claude_propose_uses_propose_prompt_file_not_debug_prompt(tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    debug_prompt = tmp_path / "debug.md"
+    debug_prompt.write_text("DEBUG_PROMPT_MARK")
+    evo_prompt = tmp_path / "evo.md"
+    evo_prompt.write_text("EVOSEARCH_PROMPT_MARK")
+    iter_dir = tmp_path / "iter_00"
+    body = (
+        'echo "$@" > cli_args.txt\n'
+        f"mkdir -p '{iter_dir}/candidate_A'\n"
+        f"echo 'print(0)' > '{iter_dir}/candidate_A/code.py'\n")
+    bin_dir = _make_shim(tmp_path, body)
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(debug_prompt),
+                            propose_prompt_file=str(evo_prompt), timeout_s=30)
+    ctx = ProposeContext(task_dir=task, iter_dir=iter_dir,
+                         top3=[], skills=[], k=1)
+    actor.propose(ctx, model="sonnet")
+    args = (task / "cli_args.txt").read_text()
+    assert "EVOSEARCH_PROMPT_MARK" in args
+    assert "DEBUG_PROMPT_MARK" not in args
+
+
+def test_claude_propose_falls_back_to_debug_prompt_when_no_propose_prompt(
+        tmp_path, monkeypatch):
+    task = tmp_path / "task"; task.mkdir()
+    debug_prompt = tmp_path / "debug.md"
+    debug_prompt.write_text("DEBUG_PROMPT_MARK")
+    iter_dir = tmp_path / "iter_00"
+    body = (
+        'echo "$@" > cli_args.txt\n'
+        f"mkdir -p '{iter_dir}/candidate_A'\n"
+        f"echo 'print(0)' > '{iter_dir}/candidate_A/code.py'\n")
+    bin_dir = _make_shim(tmp_path, body)
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    actor = ClaudeCodeActor(prompt_file=str(debug_prompt), timeout_s=30)
+    ctx = ProposeContext(task_dir=task, iter_dir=iter_dir,
+                         top3=[], skills=[], k=1)
+    actor.propose(ctx, model="sonnet")
+    args = (task / "cli_args.txt").read_text()
+    assert "DEBUG_PROMPT_MARK" in args
+
+
 def test_claude_propose_injects_coordinator_skills_into_prompt(tmp_path, monkeypatch):
     from aspire.skill_library import Skill
     task = tmp_path / "task"; task.mkdir()

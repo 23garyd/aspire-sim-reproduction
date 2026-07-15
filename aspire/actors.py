@@ -86,12 +86,17 @@ def _run_claude(prompt: str, cwd: Path, model: str, timeout_s: int) -> str:
 
 
 class ClaudeCodeActor:
-    def __init__(self, prompt_file: str, timeout_s: int = 7200):
+    def __init__(self, prompt_file: str, propose_prompt_file: str = None,
+                 timeout_s: int = 7200):
         self._prompt_file = prompt_file
+        self._propose_prompt_file = propose_prompt_file
         self._timeout = timeout_s
 
     def _prompt(self) -> str:
         return Path(self._prompt_file).read_text()
+
+    def _propose_prompt(self) -> str:
+        return Path(self._propose_prompt_file or self._prompt_file).read_text()
 
     def run_debug(self, task_dir: Path, model: str) -> ActorReport:
         _run_claude(self._prompt(), task_dir, model, self._timeout)
@@ -112,7 +117,7 @@ class ClaudeCodeActor:
         if ctx.skills:
             extra += "\nRelevant skills:\n" + "\n".join(
                 f"- {s.name}: {' '.join(s.when_to_apply.split())}" for s in ctx.skills)
-        _run_claude(self._prompt() + extra, ctx.task_dir, model, self._timeout)
+        _run_claude(self._propose_prompt() + extra, ctx.task_dir, model, self._timeout)
         paths = sorted(ctx.iter_dir.glob("candidate_*/code.py"),
                        key=lambda p: p.parent.name.casefold())
         if not paths:

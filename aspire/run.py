@@ -19,6 +19,16 @@ from aspire.schemas import ExecuteResult
 from aspire.skill_library import SkillLibrary
 
 
+def _build_capx_actors(prompts_dir: str, task_dir):
+    """Actor: debug prompt for run_debug, evosearch prompt for propose."""
+    actor = ClaudeCodeActor(
+        prompt_file=f"{prompts_dir}/actor_debug.md",
+        propose_prompt_file=f"{prompts_dir}/actor_evosearch.md")
+    judge = ClaudeJudge(prompt_file=f"{prompts_dir}/coordinator_admission.md",
+                        workdir=Path(task_dir))
+    return actor, judge
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--task-dir", required=True)
@@ -40,9 +50,7 @@ def main(argv=None):
     else:
         engine = CapxEngine(cmd_prefix=shlex.split(args.capx_cmd),
                             out_root=Path(args.out_root))
-        actor = ClaudeCodeActor(prompt_file=f"{args.prompts}/actor_debug.md")
-        judge = ClaudeJudge(prompt_file=f"{args.prompts}/coordinator_admission.md",
-                            workdir=Path(args.task_dir))
+        actor, judge = _build_capx_actors(args.prompts, args.task_dir)
 
     pipe = TaskPipeline(Path(args.task_dir), engine, actor, judge,
                         SkillLibrary(Path(args.library)), cfg)

@@ -63,6 +63,13 @@ def test_cli_domain_error_exits_2_without_traceback(tmp_path):
     assert "Traceback" not in proc.stderr
 
 
+def test_capx_actor_wired_with_evosearch_propose_prompt(tmp_path):
+    from aspire.run import _build_capx_actors
+    actor, judge = _build_capx_actors("prompts", tmp_path)
+    assert actor._prompt_file.endswith("actor_debug.md")
+    assert actor._propose_prompt_file.endswith("actor_evosearch.md")
+
+
 def test_cli_capx_requires_cmd_and_out_root(tmp_path):
     task = tmp_path / "robosuite" / "lift"
     task.mkdir(parents=True)
