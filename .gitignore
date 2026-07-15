@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+Aspire.pdf
+tmp/
+*.png
+.DS_Store
