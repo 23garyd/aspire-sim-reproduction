@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -125,7 +126,9 @@ class TaskPipeline:
                     break
                 write_execution_context(self.task_dir, r)   # refresh for next round
 
+        evosearch_ran = False
         if dbg_score < self.cfg.theta:                      # evosearch fallback
+            evosearch_ran = True
             best = evosearch(self.task_dir, self.engine, self.actor, self.cfg,
                              skills=relevant_skills(self.library, latest.traces))
             # >= (adopt on ties) vs Stage-1's >: the evosearch best is
@@ -155,18 +158,39 @@ class TaskPipeline:
 
         val = self.validate(program, dbg_score)             # Stage 2, exactly once
 
+        # Algorithm 1 line 17 (ExtractValidatedPatterns): run the extraction actor
+        # once per task whenever a repair happened (Stage-1 rounds and/or evosearch),
+        # over the VALIDATED winner's evidence in winner/. Stage-1's own proposed
+        # skills are admitted only if that Stage-1 repair is the validated winner —
+        # otherwise a losing Stage-1 repair must not leak skills into the library.
         admitted = []
-        if report is not None:
-            provenance = (f"{self.task_dir.parent.name}/{self.task_dir.name} "
-                          f"dbg={dbg_score:.2f} val={val.score:.2f}")
-            for ps in report.proposed_skills:
-                if audit_code(ps.code_sketch):
-                    continue                                # mechanical reject, no judge
-                similar = self.library.retrieve(categories=[ps.category])[:5]
-                if self.judge.admit(ps, existing=similar):
-                    skill = Skill.from_proposed(ps, provenance=provenance)
-                    self.library.add(skill)
-                    admitted.append(skill)
+        candidates = []
+        repair_happened = (report is not None) or evosearch_ran
+        if repair_happened:
+            extraction = self.actor.extract(self.task_dir, model=self.cfg.model_repair)
+            candidates.extend(extraction.proposed_skills)
+        if (report is not None and winning_result is not None
+                and str(program).endswith(report.code_path)):
+            candidates.extend(report.proposed_skills)
+
+        provenance = (f"{self.task_dir.parent.name}/{self.task_dir.name} "
+                      f"dbg={dbg_score:.2f} val={val.score:.2f}")
+        admitted_names = set()
+        for ps in candidates:
+            if ps.name in admitted_names:
+                continue                                    # dedup within this run
+            if audit_code(ps.code_sketch):
+                continue                                    # mechanical reject, no judge
+            kw = [w for w in re.findall(r"[a-z0-9]+",
+                  (ps.failure_signature + " " + ps.when_to_apply).lower())
+                  if len(w) >= 4][:8]
+            similar = (self.library.retrieve(categories=[ps.category], keywords=kw)[:5]
+                       or self.library.retrieve(categories=[ps.category])[:5])
+            if self.judge.admit(ps, existing=similar):
+                skill = Skill.from_proposed(ps, provenance=provenance)
+                self.library.add(skill)
+                admitted.append(skill)
+                admitted_names.add(ps.name)
 
         return TaskResult(stage_reached="validated", dbg_score=dbg_score,
                           val_score=val.score, program=str(program),

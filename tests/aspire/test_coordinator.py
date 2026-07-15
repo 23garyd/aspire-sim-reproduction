@@ -43,7 +43,9 @@ def test_debug_then_validate_and_admit_skill(tmp_path):
     engine = FakeEngine([ExecuteResult(0.0),   # Stage 0 fails
                          ExecuteResult(1.0),   # fix_code.py on S_dbg passes
                          ExecuteResult(1.0)])  # Stage 2
-    actor = FakeActor(reports=[_skillful_report()])
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
     lib = SkillLibrary(tmp_path / "lib")
     (task / "fix_code.py").write_text("clean_fix()")
     pipe = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG)
@@ -57,7 +59,10 @@ def test_judge_rejection_blocks_admission(tmp_path):
     engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
     (task / "fix_code.py").write_text("clean_fix()")
     lib = SkillLibrary(tmp_path / "lib")
-    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+    pipe = TaskPipeline(task, engine, FakeActor(
+                            reports=[_skillful_report()],
+                            extraction_reports=[ActorReport(
+                                outcome="success", diagnosis="d", code_path="fix_code.py")]),
                         FakeJudge([False]), lib, CFG)
     pipe.run()
     assert lib.load_all() == []
@@ -74,7 +79,10 @@ def test_audit_violation_blocks_admission_without_judge(tmp_path):
             when_to_apply="w", strategy="s",
             code_sketch="q = env.handle.env.sim.data.qpos"),))
     lib = SkillLibrary(tmp_path / "lib")
-    pipe = TaskPipeline(task, engine, FakeActor(reports=[bad]),
+    pipe = TaskPipeline(task, engine, FakeActor(
+                            reports=[bad],
+                            extraction_reports=[ActorReport(
+                                outcome="success", diagnosis="d", code_path="fix_code.py")]),
                         FakeJudge([]), lib, CFG)   # judge never consulted (would raise on pop)
     pipe.run()
     assert lib.load_all() == []
@@ -90,7 +98,9 @@ def test_debug_exhausted_falls_through_to_evosearch(tmp_path):
     (task / "fix_code.py").write_text("still_bad()")
     actor = FakeActor(reports=[ActorReport(outcome="fail", diagnosis="d",
                                            code_path="fix_code.py")],
-                      candidate_sources=[["good", "meh"]])
+                      candidate_sources=[["good", "meh"]],
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
     lib = SkillLibrary(tmp_path / "lib")
     pipe = TaskPipeline(task, engine, actor, FakeJudge([]), lib, CFG)
     result = pipe.run()
@@ -144,7 +154,9 @@ def test_evosearch_worse_than_debug_keeps_debug_program(tmp_path):
     (task / "fix_code.py").write_text("decent_fix()")
     actor = FakeActor(reports=[ActorReport(outcome="fail", diagnosis="d",
                                            code_path="fix_code.py")],
-                      candidate_sources=[["worse1", "worse2"]])
+                      candidate_sources=[["worse1", "worse2"]],
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
     lib = SkillLibrary(tmp_path / "lib")
     result = TaskPipeline(task, engine, actor, FakeJudge([]), lib, cfg).run()
     assert result.dbg_score == 0.5
@@ -174,7 +186,9 @@ def test_cheating_fix_scores_zero_and_never_executes(tmp_path):
     (task / "fix_code.py").write_text("q = env.handle.env.sim.data.qpos  # cheat")
     actor = FakeActor(reports=[ActorReport(outcome="success", diagnosis="d",
                                            code_path="fix_code.py")],
-                      candidate_sources=[["cand1", "cand2"]])
+                      candidate_sources=[["cand1", "cand2"]],
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
     lib = SkillLibrary(tmp_path / "lib")
     cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=1, s_dbg=[0, 1], s_val=[100, 101])
     result = TaskPipeline(task, audited, actor, FakeJudge([]), lib, cfg).run()
@@ -210,7 +224,10 @@ def test_run_materializes_task_context_for_actor(tmp_path):
     lib.add(Skill(name="multi-angle-approach", category="navigation",
                   failure_signature="repeated PLANNING_ERROR near obstacle",
                   when_to_apply="w", strategy="s"))
-    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+    pipe = TaskPipeline(task, engine, FakeActor(
+                            reports=[_skillful_report()],
+                            extraction_reports=[ActorReport(
+                                outcome="success", diagnosis="d", code_path="fix_code.py")]),
                         FakeJudge([True]), lib, CFG, task_language="pick up the can")
     pipe.run()
     assert "PLANNING_ERROR" in (task / "traces" / "summary.txt").read_text()
@@ -240,7 +257,9 @@ def test_second_debug_round_context_reflects_first_fix_failure(tmp_path):
     cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=2, s_dbg=[0, 1], s_val=[100, 101])
     actor = FakeActor(reports=[
         ActorReport(outcome="fail", diagnosis="d1", code_path="fix_code.py"),
-        ActorReport(outcome="success", diagnosis="d2", code_path="fix_code.py")])
+        ActorReport(outcome="success", diagnosis="d2", code_path="fix_code.py")],
+        extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                        code_path="fix_code.py")])
     pipe = TaskPipeline(task, engine, actor, FakeJudge([]), lib, cfg)
     result = pipe.run()
     assert result.val_score == 0.9
@@ -262,7 +281,10 @@ def test_winner_bundle_persisted_for_extraction(tmp_path):
                          ExecuteResult(0.9, traces=[val_trace])])  # S_val
     (task / "fix_code.py").write_text("clean_fix()")
     lib = SkillLibrary(tmp_path / "lib")
-    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+    pipe = TaskPipeline(task, engine, FakeActor(
+                            reports=[_skillful_report()],
+                            extraction_reports=[ActorReport(
+                                outcome="success", diagnosis="d", code_path="fix_code.py")]),
                         FakeJudge([True]), lib, CFG)
     pipe.run()
     w = task / "winner"
@@ -281,7 +303,9 @@ def test_winner_bundle_from_evosearch_winner(tmp_path):
     (task / "fix_code.py").write_text("still_bad()")
     actor = FakeActor(reports=[ActorReport(outcome="fail", diagnosis="d",
                                            code_path="fix_code.py")],
-                      candidate_sources=[["good", "meh"]])
+                      candidate_sources=[["good", "meh"]],
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
     lib = SkillLibrary(tmp_path / "lib")
     pipe = TaskPipeline(task, engine, actor, FakeJudge([]), lib, CFG)
     pipe.run()
@@ -318,6 +342,83 @@ def test_winner_debug_bundle_written_before_validation(tmp_path):
     assert not (task / "VALIDATION_DONE").exists()
 
 
+def _extraction_report(name="extracted-pattern", category="navigation"):
+    return ActorReport(outcome="success", diagnosis="d", code_path="code.py",
+                       proposed_skills=(ProposedSkill(
+                           name=name, category=category, failure_signature="f",
+                           when_to_apply="w", strategy="s"),))
+
+
+def test_evosearch_winner_produces_skills_stage1_skills_blocked(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(0.2),      # S0, losing fix
+                         ExecuteResult(0.0),                          # evo baseline
+                         ExecuteResult(1.0), ExecuteResult(0.3),      # candidates
+                         ExecuteResult(0.8)])                         # S_val
+    (task / "fix_code.py").write_text("still_bad()")
+    actor = FakeActor(reports=[_skillful_report()],                   # proposes multi-angle-approach
+                      candidate_sources=[["good", "meh"]],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG)
+    pipe.run()
+    names = [s.name for s in lib.load_all()]
+    assert "extracted-pattern" in names          # extraction skills admitted
+    assert "multi-angle-approach" not in names   # losing Stage-1 repair's skills blocked
+    assert actor.extract_calls, "extraction must run after evosearch win"
+
+
+def test_stage1_winner_admits_both_extraction_and_report_skills(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([True, True]), lib, CFG)
+    pipe.run()
+    names = sorted(s.name for s in lib.load_all())
+    assert names == ["extracted-pattern", "multi-angle-approach"]
+
+
+def test_baseline_pass_skips_extraction(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(1.0), ExecuteResult(0.9)])
+    lib = SkillLibrary(tmp_path / "lib")
+    actor = FakeActor()          # no extraction reports scripted: a call would raise
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([]), lib, CFG)
+    pipe.run()
+    assert actor.extract_calls == []
+    assert lib.load_all() == []
+
+
+def test_dedup_retrieval_is_keyword_ranked(tmp_path):
+    from aspire.skill_library import Skill
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    lib = SkillLibrary(tmp_path / "lib")
+    # alphabetical-first decoy shares the category but no keywords:
+    lib.add(Skill(name="aaa-unrelated", category="navigation",
+                  failure_signature="totally different thing",
+                  when_to_apply="elsewhere", strategy="s"))
+    lib.add(Skill(name="zzz-relevant", category="navigation",
+                  failure_signature="PLANNING_ERROR family",
+                  when_to_apply="near obstacle", strategy="s"))
+    judge = FakeJudge([True])
+    actor = FakeActor(reports=[_skillful_report()],       # failure_signature="PLANNING_ERROR"
+                      extraction_reports=[ActorReport(outcome="success", diagnosis="d",
+                                                      code_path="fix_code.py")])
+    pipe = TaskPipeline(task, engine, actor, judge, lib, CFG)
+    pipe.run()
+    # the judged skill is multi-angle-approach (Stage-1 winner); keyword-ranked
+    # retrieval must surface zzz-relevant (shares PLANNING/obstacle tokens), and the
+    # keyword hit list must not be diluted to the alphabetical decoy:
+    (skill_name, existing_names), = [c for c in judge.admit_calls]
+    assert skill_name == "multi-angle-approach"
+    assert existing_names == ("zzz-relevant",)
+
+
 def test_admission_passes_similar_skills_to_judge(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)
@@ -327,7 +428,10 @@ def test_admission_passes_similar_skills_to_judge(tmp_path):
     lib.add(Skill(name="old-nav-skill", category="navigation", failure_signature="f",
                   when_to_apply="w", strategy="s"))
     judge = FakeJudge([True])
-    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()]),
+    pipe = TaskPipeline(task, engine, FakeActor(
+                            reports=[_skillful_report()],
+                            extraction_reports=[ActorReport(
+                                outcome="success", diagnosis="d", code_path="fix_code.py")]),
                         judge, lib, CFG)
     pipe.run()
     assert judge.admit_calls == [("multi-angle-approach", ("old-nav-skill",))]
