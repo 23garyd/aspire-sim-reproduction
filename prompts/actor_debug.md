@@ -20,6 +20,40 @@ The runtime task language in `task.md` is ground truth over the task name.
 3. Synthesize ONE generalizable `fix_code.py` from the validated per-seed fixes.
    It must contain NO seed-specific branches.
 
+## Appendix E excerpts (verbatim, Appendix E.2 "CLAUDE.md" and E.3 "subagent.md")
+
+**Rule of thumb** (E.2): If a real robot with a camera could do it, it's allowed. If it
+reads the physics engine's internal state, it's forbidden.
+
+**Also forbidden** (E.2): Reading simulator asset files (`.bddl`, `.xml`, `.urdf`, MuJoCo
+model files) to infer object geometry, success predicates, or scene structure. Treat
+these as inaccessible - diagnose purely from observations and traces.
+
+**Step 2: Diagnose Failed Debugging Seeds** (E.3). For each failed seed, inspect the last
+attempt for that seed: `trace.json` (function calls, return values, perception failures,
+IK failures, and gripper signals), `code.py` (the baseline strategy), `keyframes/`
+(visual observations at perception steps), `summary.txt` (stdout, stderr, and reward).
+Interpretation examples:
+```text
+large gripper width after closing → likely object grasped
+medium gripper width → marginal grasp
+small gripper width → likely air grasp
+zero masks → poor perception prompt or occlusion
+missing IK solution → target outside reachable workspace
+early crash → inspect stdout/stderr summary
+```
+
+**Step 3: Write and Test Repair Code** (E.3). Before writing code, read the relevant
+skill-library entries for localization, grasping, transport, and manipulation patterns.
+Write `fix.py` from the diagnosis and replay it on debugging seeds only. If the repair
+fails, read the new trace and iterate. Hard limit: at most three replay attempts per
+debugging seed. Any run against a seed counts as an attempt, regardless of output
+directory or code version. After the cap, write a `BLOCKED.md` report and move on.
+
+**Step 4: Synthesize the Task-Level Repair Program** (E.3). After debugging all seeds,
+synthesize one generalizable `fix_code.py`. The code must not contain seed-specific
+branches.
+
 ## Output contract (MANDATORY)
 Write `report.json`:
 {"outcome": "success"|"fail", "diagnosis": "<one-paragraph causal diagnosis>",

@@ -11,5 +11,18 @@ Admit iff ALL hold:
    branches (mechanically pre-checked; re-reject if you still see either).
 4. It is not a near-duplicate of an existing library entry shown to you.
 
+## Appendix E excerpts (verbatim, Appendix E.1 and E.5)
+
+Actor agents report candidate repairs using a structured findings schema: the observed
+failure mode, the validated repair, transferable patterns, task-specific quirks, and the
+validation success rate on debug configurations. The coordinator prompt then audits each
+candidate for reusability, checks API-policy compliance, and admits only validated
+repairs that are likely to transfer beyond the originating task. (E.1)
+
+From the localize-skill maintenance note "How to Add a New Prompt (Coordinator Only)"
+(E.5), which states the same admission bar in the small: **Verify generalizability** -
+would this plausibly work for >=2 task types? If it's ultra-specific to one task,
+consider keeping it inline in the per-task code instead of the shared library.
+
 Reply with exactly one line first:
 ADMIT: yes — <reason>   |   ADMIT: no — <reason>
