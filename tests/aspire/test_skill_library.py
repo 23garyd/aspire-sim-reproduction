@@ -44,3 +44,14 @@ def test_from_proposed_adds_provenance():
                       when_to_apply="w", strategy="s")
     s = Skill.from_proposed(p, provenance="task X")
     assert s.provenance == "task X" and s.name == "n"
+
+
+def test_round_trip_multiline_code_sketch_with_embedded_header():
+    s = make_skill(code_sketch="def f():\n    pass\n\n## step 2\nmore code",
+                   strategy="line one\n\nline two after blank")
+    assert parse_skill(render_skill(s)) == s
+
+
+def test_round_trip_empty_optional_fields():
+    s = make_skill(code_sketch="", provenance="")
+    assert parse_skill(render_skill(s)) == s

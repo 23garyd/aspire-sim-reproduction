@@ -38,10 +38,23 @@ def render_skill(s: Skill) -> str:
 def parse_skill(text: str) -> Skill:
     name = re.search(r"^# (.+)$", text, re.M).group(1).strip()
     category = re.search(r"^category: (.+)$", text, re.M).group(1).strip()
-    fields = {}
+    # Locate each known section header positionally: search for each header only
+    # after the previous one, so an in-field "## ..." line can't be mistaken for
+    # the next header unless it exactly matches one of the remaining known titles.
+    positions = []
+    cursor = 0
     for key in _SECTIONS:
-        m = re.search(rf"^## {re.escape(_TITLES[key])}\n\n(.*?)(?=\n\n## |\n?\Z)", text, re.S | re.M)
-        fields[key] = m.group(1).strip() if m else ""
+        m = re.compile(rf"^## {re.escape(_TITLES[key])}$", re.M).search(text, cursor)
+        positions.append((key, m))
+        if m:
+            cursor = m.end()
+    fields = {}
+    for i, (key, m) in enumerate(positions):
+        if m is None:
+            fields[key] = ""
+            continue
+        nxt = next((p.start() for _, p in positions[i + 1:] if p), len(text))
+        fields[key] = text[m.end():nxt].strip()
     return Skill(name=name, category=category, **fields)
 
 
