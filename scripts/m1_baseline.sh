@@ -9,10 +9,9 @@ cd ~/cap-x
 OUT=~/aspire_runs/m1_baseline
 mkdir -p "$OUT"
 
-# Task list: intended Table-3 subset. Exact env_configs names MUST be confirmed
-# against ~/cap-x/env_configs/ during M0 (they may differ); update the array and
-# commit the correction rather than editing ad hoc.
-TASKS=(lift stack two_arm_handover pick_place_can door)
+# Task list: confirmed against ~/cap-x/env_configs/ during M0. CaP-X has no door or
+# pick_place_can task; nut_assembly is the nearest pick/place. Handover is the headline.
+TASKS=(cube_lifting cube_stack two_arm_handover nut_assembly two_arm_lift)
 
 # Model id for the launcher is confirmed during M0 (CaP-X docs show an
 # OpenAI-compatible proxy; use the Claude model configured there). CAPX_MODEL
