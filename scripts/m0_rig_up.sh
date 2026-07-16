@@ -5,15 +5,18 @@
 # Every phase prints PASS or the script dies (set -e) — no silent success claims.
 set -euo pipefail
 
-echo "[1/5] clone cap-x + install uv"
-[ -d ~/cap-x ] || git clone https://github.com/capgym/cap-x ~/cap-x
+echo "[1/5] clone cap-x (with submodules) + install uv"
+[ -d ~/cap-x ] || git clone --recurse-submodules https://github.com/capgym/cap-x ~/cap-x
+cd ~/cap-x && git submodule update --init --recursive   # idempotent; covers plain clones
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
-echo "    PASS: cap-x present, uv $(uv --version 2>/dev/null || echo '?')"
+echo "    PASS: cap-x present (submodules init), uv $(uv --version 2>/dev/null || echo '?')"
 
-echo "[2/5] sync env (authoritative steps: ~/cap-x/README.md + docs/)"
-cd ~/cap-x && uv sync
-echo "    PASS: uv sync"
+echo "[2/5] sync env — robosuite family (per README: robosuite 1.5 vs LIBERO conflict)"
+cd ~/cap-x && uv sync --extra robosuite
+echo "    PASS: uv sync --extra robosuite"
+echo "    NOTE: SAM3 weights need HuggingFace auth (huggingface-cli login) before"
+echo "          perception-dependent runs; not required for the GPU smoke test."
 
 echo "[3/5] GPU smoke: robosuite headless renders one frame"
 uv run --no-sync python - <<'EOF'
