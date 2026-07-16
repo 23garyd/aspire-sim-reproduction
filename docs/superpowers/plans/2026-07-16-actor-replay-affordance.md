@@ -41,3 +41,12 @@
   allowedTools syntax live.
 
 Review: combined spec+quality (opus) after R1+R2; findings fix-first as usual.
+
+
+## R3 outcome (2026-07-16) — DONE
+Live smoke + real-actor e2e both passed (runs/2026-07-16-replay-affordance-e2e/).
+Live findings fixed en route: shim PYTHONPATH trailing-colon dual-import (the review's
+"harmless" residual proved catastrophic); seed_attempts shape mismatch (the G2-predicted
+reader crash) — normalizer + arity guard + prompt example. allowedTools grant verified;
+OS sandbox permits PYTHONPATH reads (no vendoring needed). First-ever actor run with
+outcome "success", replay-validated on all three seeds, and no BLOCKED.md.

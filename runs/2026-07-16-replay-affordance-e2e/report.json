@@ -1,0 +1,16 @@
+{
+  "outcome": "success",
+  "diagnosis": "The cube_stack baseline never grasps the red cube: after sampling a grasp pose and moving to it with goto_pose (step 3), the program immediately lifts (step 4) without ever closing the gripper. Every primitive returns status 'ok' because none fails in isolation, so the trace shows no FAILURES; the defect is a broken causal chain, not a primitive error. The keyframe after the lift (seed0_step004_goto_pose_after.png) confirms it visually — the arm has risen but the red cube is still resting on the table, i.e. an open-gripper 'air' pick. Consequently the subsequent transport-to-green, open_gripper, and retract all operate on an empty gripper and nothing is stacked, yielding zero reward across all debugging seeds. The fix inserts a single close_gripper() call between reaching the grasp pose and the lift; validated at score 1.0 on debugging seeds 0, 1, and 2.",
+  "code_path": "fix_code.py",
+  "seed_attempts": [[0, 1], [1, 1], [2, 1]],
+  "proposed_skills": [
+    {
+      "name": "close-gripper-before-lift",
+      "category": "grasping",
+      "failure_signature": "Pick-and-place program reaches the sampled grasp pose and lifts, but the object stays on the table (post-lift keyframe shows empty gripper); all primitives report 'ok' / zero FAILURES yet task reward is 0 because the object is never transported.",
+      "when_to_apply": "Any pick-transport-place task where the code sequence is sample_grasp_pose -> goto_pose(grasp) -> goto_pose(lift) with no gripper-closing primitive between the descent and the lift.",
+      "strategy": "After moving the end-effector to the grasp pose (goto_pose to the sampled grasp position), issue close_gripper() to actually secure the object before any lifting/transport goto_pose. A successful grasp should leave a non-trivial gripper width; verify from the trace that the lift keyframe shows the object moving with the gripper rather than remaining on the surface.",
+      "code_sketch": "pick_pos, pick_quat = sample_grasp_pose(obj)\ngoto_pose(pick_pos, pick_quat, z_approach=0.1)\nclose_gripper()  # secure object before lifting\nlift = pick_pos.copy(); lift[2] += 0.2\ngoto_pose(lift, pick_quat)"
+    }
+  ]
+}
