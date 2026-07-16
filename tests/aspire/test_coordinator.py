@@ -671,8 +671,31 @@ def test_materialized_shim_executes_from_outside_repo(tmp_path):
     TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG).run()
 
     (task / "fix.py").write_text("navigate_to_pose([1,2,0])")
+    import os
     import subprocess
+    # F1 (R3 live finding): the exact condition that broke on the real engine was
+    # an EMPTY inherited $PYTHONPATH — the shim's naive `<repo>:$PYTHONPATH` then
+    # yields a trailing colon (an empty sys.path entry = cwd-at-import-time), which
+    # for the real capx engine caused a duplicate-module-instance import. The fake
+    # engine here can't reproduce the dual-import symptom, but stripping PYTHONPATH
+    # from the environment pins that the shim still runs correctly without one.
+    stripped_env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     proc = subprocess.run(["./replay", "fix.py", "0"], cwd=task,
-                          capture_output=True, text=True, timeout=60)
+                          capture_output=True, text=True, timeout=60,
+                          env=stripped_env)
     assert proc.returncode == 0, proc.stderr
     assert "score:" in proc.stdout
+
+
+def test_materialized_shim_guards_empty_pythonpath(tmp_path):
+    # F1: the shim body must use bash's ${VAR:+...} guard so an empty/unset
+    # inherited $PYTHONPATH does not produce a trailing-colon (empty sys.path
+    # entry) that lets the real capx engine subprocess import from cwd instead
+    # of the venv-installed package (root cause of the R3 live-smoke failure).
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(1.0), ExecuteResult(0.9)])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, FakeActor(), FakeJudge([]), lib, CFG)
+    pipe._materialize_replay()
+    body = (task / "replay").read_text()
+    assert "${PYTHONPATH:+:$PYTHONPATH}" in body

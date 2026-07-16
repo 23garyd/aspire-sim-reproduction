@@ -3,6 +3,7 @@ import pytest
 from pathlib import Path
 
 from aspire import replay
+from aspire.engines import FakeEngine
 from aspire.schemas import ExecuteResult, TraceRecord
 
 
@@ -115,3 +116,16 @@ def test_replay_crash_consumed_attempt(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert replay.main(["fix.py", "0"]) == 5
     assert json.loads((tmp_path / "replays" / "attempts.json").read_text()) == {"0": 1}
+
+
+def test_replay_passes_absolute_program_path(tmp_path, monkeypatch):
+    # F2 (R3 live finding): CapxEngine's runner chdirs to its own --workdir before
+    # reading --program; a relative exec-copy path then resolves against the
+    # WRONG cwd (FileNotFoundError on the real engine). The engine must always
+    # receive an absolute path.
+    _setup(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    rec = FakeEngine([ExecuteResult(0.5)])
+    monkeypatch.setattr(replay, "_build_engine", lambda recipe: rec)
+    assert replay.main(["fix.py", "1"]) == 0
+    assert Path(rec.calls[0][0]).is_absolute()

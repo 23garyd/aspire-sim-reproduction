@@ -79,10 +79,17 @@ class TaskPipeline:
         # outside the task dir at the OS level. If a future sandbox blocks that,
         # PYTHONPATH alone won't suffice and aspire/ would need to be vendored into
         # the task dir instead.
+        # F1 (R3 live finding): use bash's ${VAR:+...} guard, NOT a bare
+        # "<repo>:$PYTHONPATH". With an empty/unset inherited $PYTHONPATH, the naive
+        # form yields a trailing colon = an empty sys.path entry = cwd-at-import-time.
+        # The replay's engine subprocess inherits that env; capx_execute chdirs to
+        # ~/cap-x and Python then imports the `capx` package from the SOURCE TREE
+        # instead of the venv-installed copy, splitting the API registry across two
+        # module instances (live-verified: "API '...' not registered").
         shim = self.task_dir / "replay"
         repo_root = Path(__file__).resolve().parents[1]
         shim_body = (f"#!/bin/bash\n"
-                     f"exec env PYTHONPATH=\"{repo_root}:$PYTHONPATH\" "
+                     f"exec env PYTHONPATH=\"{repo_root}${{PYTHONPATH:+:$PYTHONPATH}}\" "
                      f"\"{sys.executable}\" -m aspire.replay \"$@\"\n")
         _atomic_write(shim, shim_body)
         shim.chmod(0o755)

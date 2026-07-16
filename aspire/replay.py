@@ -125,8 +125,12 @@ def main(argv=None) -> int:
     exec_copy = out / Path(program_arg).name
     shutil.copyfile(program, exec_copy)
 
+    # F2 (R3 live finding): the real engine's runner os.chdir()s to its own workdir
+    # before reading --program; a path that isn't fully resolved (symlinks, or any
+    # non-canonical component) then resolves against the WRONG cwd. Always hand the
+    # engine a canonical absolute path.
     try:
-        result = engine.execute(exec_copy, [seed])
+        result = engine.execute(exec_copy.resolve(), [seed])
     except EngineError as e:
         print(str(e), file=sys.stderr)
         return 5
