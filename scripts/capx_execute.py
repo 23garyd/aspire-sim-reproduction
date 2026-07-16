@@ -122,7 +122,12 @@ def main():
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--config-path", default="")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--workdir", default="",
+                    help="chdir here before running (CaP-X loads configs by relative path)")
     args = ap.parse_args()
+
+    if args.workdir:
+        os.chdir(args.workdir)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
