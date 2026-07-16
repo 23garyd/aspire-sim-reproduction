@@ -49,6 +49,7 @@ def test_claude_actor_invokes_cli_and_loads_report(tmp_path, monkeypatch):
     assert "--model opus" in args and "-p" in args
     assert "--permission-mode acceptEdits" in args
     assert "PROMPT_SENTINEL_XYZ" in args
+    assert "--allowedTools" in args and "Bash(./replay:*)" in args
 
 
 def test_claude_actor_no_report_raises(tmp_path, monkeypatch):

@@ -22,6 +22,12 @@ def test_debug_prompt_carries_forbidden_wall():
         assert token in text
 
 
+def test_debug_prompt_states_replay_affordance():
+    text = (PROMPTS / "actor_debug.md").read_text()
+    assert "./replay" in text
+    assert "3 attempts" in text
+
+
 def test_evosearch_prompt_requires_reading_top_programs():
     text = (PROMPTS / "actor_evosearch.md").read_text().lower()
     assert "read" in text and "top" in text  # actors get PATHS; must be told to read them

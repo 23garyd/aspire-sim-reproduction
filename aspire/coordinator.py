@@ -58,6 +58,24 @@ class TaskPipeline:
         self.library, self.cfg = library, cfg
         self.task_language = task_language
 
+    # -- replay affordance (App E inner loop) --------------------------------
+    def _materialize_replay(self) -> None:
+        """Writes ./replay (executable shim), replay.json (engine recipe + policy),
+        and resets replays/attempts.json — called before each Stage-1 actor round so
+        the per-session attempt budget resets per round (spec: per-round reset)."""
+        recipe = self.engine.describe()
+        if recipe.get("type") == "capx":
+            recipe = dict(recipe, out_root=str(self.task_dir / "replays" / "engine"))
+        _atomic_write(self.task_dir / "replay.json", json.dumps(
+            {"engine": recipe, "s_dbg": list(self.cfg.s_dbg),
+             "max_attempts_per_seed": self.cfg.max_seed_attempts}, indent=1))
+        shim = self.task_dir / "replay"
+        _atomic_write(shim, "#!/bin/bash\nexec python3 -m aspire.replay \"$@\"\n")
+        shim.chmod(0o755)
+        attempts = self.task_dir / "replays" / "attempts.json"
+        attempts.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write(attempts, "{}")
+
     # -- Stage 2 guard ------------------------------------------------------
     def validate(self, program: Path, dbg_score: float = -1.0):
         marker = self.task_dir / "VALIDATION_DONE"
@@ -136,6 +154,7 @@ class TaskPipeline:
             for _ in range(self.cfg.debug_rounds):          # Stage 1
                 write_skills_context(self.task_dir,
                                      relevant_skills(self.library, latest.traces))
+                self._materialize_replay()
                 report = self.actor.run_debug(self.task_dir, model=self.cfg.model_repair)
                 fix = self.task_dir / report.code_path
                 r = self.engine.execute(fix, self.cfg.s_dbg)

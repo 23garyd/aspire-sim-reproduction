@@ -13,6 +13,11 @@ from aspire.skill_library import Skill, render_skill
 
 _CAND_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+# Narrowly-scoped permission for the replay affordance (R2): run_debug ONLY grants
+# Bash execution of the coordinator-materialized ./replay shim (App E inner loop);
+# propose/extract do not get it. acceptEdits alone does not grant Bash execution.
+REPLAY_ALLOWED_TOOLS = "Bash(./replay:*)"
+
 
 class ActorError(RuntimeError):
     pass
@@ -84,12 +89,13 @@ class FakeJudge:
         return self._d.pop(0)
 
 
-def _run_claude(prompt: str, cwd: Path, model: str, timeout_s: int) -> str:
+def _run_claude(prompt: str, cwd: Path, model: str, timeout_s: int,
+                extra_args=()) -> str:
     try:
         # acceptEdits: headless actors must write report.json / fix_code.py in cwd
         # without interactive permission prompts (they run unattended on the GPU box).
         proc = subprocess.run(["claude", "-p", prompt, "--model", model,
-                               "--permission-mode", "acceptEdits"],
+                               "--permission-mode", "acceptEdits", *extra_args],
                               cwd=cwd, capture_output=True, text=True,
                               errors="replace", timeout=timeout_s)
     except subprocess.TimeoutExpired as e:
@@ -121,7 +127,8 @@ class ClaudeCodeActor:
         return Path(self._extract_prompt_file).read_text()
 
     def run_debug(self, task_dir: Path, model: str) -> ActorReport:
-        _run_claude(self._prompt(), task_dir, model, self._timeout)
+        _run_claude(self._prompt(), task_dir, model, self._timeout,
+                   extra_args=["--allowedTools", REPLAY_ALLOWED_TOOLS])
         report = task_dir / "report.json"
         if not report.exists():
             raise ActorError("actor finished without writing report.json")

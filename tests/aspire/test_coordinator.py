@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from aspire.actors import FakeActor, FakeJudge
@@ -607,3 +609,47 @@ def test_extraction_failure_writes_marker(tmp_path):
     assert (task / "EXTRACTION_FAILED").exists()
     assert "extraction" in (task / "EXTRACTION_FAILED").read_text().lower()
     assert result.val_score == 1.0
+
+
+def test_replay_materialized_for_actor(tmp_path):
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, FakeActor(reports=[_skillful_report()],
+                                                extraction_reports=[_extraction_report()]),
+                        FakeJudge([True, True]), lib, CFG)
+    pipe.run()
+    rec = json.loads((task / "replay.json").read_text())
+    assert rec["engine"]["type"] == "fake"
+    assert rec["s_dbg"] == list(CFG.s_dbg)
+    assert rec["max_attempts_per_seed"] == CFG.max_seed_attempts
+    shim = task / "replay"
+    assert shim.exists() and shim.stat().st_mode & 0o111
+    assert json.loads((task / "replays" / "attempts.json").read_text()) == {}
+
+
+def test_attempts_reset_between_rounds(tmp_path):
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=1, theta=1.0, debug_rounds=2, s_dbg=[0, 1], s_val=[100, 101])
+
+    class ReplayingActor(FakeActor):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self.seen = []
+
+        def run_debug(self, task_dir, model):
+            self.seen.append((task_dir / "replays" / "attempts.json").read_text())
+            (task_dir / "replays" / "attempts.json").write_text('{"0": 3}')  # actor used its cap
+            return super().run_debug(task_dir, model)
+
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(0.2), ExecuteResult(1.0),
+                         ExecuteResult(0.9)])
+    (task / "fix_code.py").write_text("f()")
+    actor = ReplayingActor(
+        reports=[ActorReport(outcome="fail", diagnosis="d", code_path="fix_code.py"),
+                 ActorReport(outcome="success", diagnosis="d", code_path="fix_code.py")],
+        extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    TaskPipeline(task, engine, actor, FakeJudge([True]), lib, cfg).run()
+    assert actor.seen == ["{}", "{}"]
