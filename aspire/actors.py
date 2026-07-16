@@ -86,7 +86,10 @@ class FakeJudge:
 
 def _run_claude(prompt: str, cwd: Path, model: str, timeout_s: int) -> str:
     try:
-        proc = subprocess.run(["claude", "-p", prompt, "--model", model],
+        # acceptEdits: headless actors must write report.json / fix_code.py in cwd
+        # without interactive permission prompts (they run unattended on the GPU box).
+        proc = subprocess.run(["claude", "-p", prompt, "--model", model,
+                               "--permission-mode", "acceptEdits"],
                               cwd=cwd, capture_output=True, text=True,
                               errors="replace", timeout=timeout_s)
     except subprocess.TimeoutExpired as e:

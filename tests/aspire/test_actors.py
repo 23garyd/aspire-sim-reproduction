@@ -47,6 +47,7 @@ def test_claude_actor_invokes_cli_and_loads_report(tmp_path, monkeypatch):
     assert rep.outcome == "success"
     args = (task / "cli_args.txt").read_text()
     assert "--model opus" in args and "-p" in args
+    assert "--permission-mode acceptEdits" in args
     assert "PROMPT_SENTINEL_XYZ" in args
 
 
