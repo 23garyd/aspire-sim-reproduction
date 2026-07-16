@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "model": "claude-opus-4-8",
+  "mode": "privileged",
+  "agent": "CaP-Agent0 (upstream, unmodified; local proxy temperature patch only)",
+  "date": "2026-07-15",
+  "scale": "pilot (TRIALS=10)",
+  "capx_commit": "53e9966",
+  "note": "OUR baseline anchor. Paper comparison is trend-level only. two_arm_handover 30% ~= paper's ~20% baseline band; ASPIRE M3 targets this and two_arm_lift (10%)."
+ },
+ "results": {
+  "cube_lifting": {
+   "trials": 10,
+   "task_completed": 10
+  },
+  "cube_stack": {
+   "trials": 10,
+   "task_completed": 10
+  },
+  "nut_assembly": {
+   "trials": 10,
+   "task_completed": 9
+  },
+  "two_arm_handover": {
+   "trials": 10,
+   "task_completed": 3
+  },
+  "two_arm_lift": {
+   "trials": 10,
+   "task_completed": 1
+  }
+ }
+}
