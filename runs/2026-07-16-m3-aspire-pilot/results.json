@@ -1,0 +1,37 @@
+{
+ "meta": {
+  "date": "2026-07-16",
+  "model_repair": "opus (claude CLI)",
+  "model_propose": "sonnet",
+  "engine": "CaP-X robosuite, privileged configs, seeds dbg=[0,1,2] val=[100-104]",
+  "baselines": "CaP-Agent0's own failed M1 trial programs (trial_01 of each task)",
+  "anchor": "runs/2026-07-15-m1-baseline-pilot/results.json",
+  "config": {
+   "k": 3,
+   "t": 5,
+   "theta": 1.0,
+   "debug_rounds": 2
+  },
+  "note": "Trend reproduction result. Paper: handover 20%->92%. Ours: 30%->100% (5/5 held-out). Shared skill library, sequential tasks; lift's repair did not cite handover skills (no transfer claim from this run)."
+ },
+ "results": {
+  "two_arm_handover": {
+   "baseline_capagent0": "3/10 (30%)",
+   "aspire_validation": "5/5 (100%)",
+   "mechanism": "Stage-1 Opus repair failed (0.0) -> evosearch round 1: candidates [0.0, 1.0, 0.0] -> early stop -> validated 1.0",
+   "skills_admitted": [
+    "allocate-shared-object-span-between-two-effectors",
+    "keyframe-geometry-from-trace-images"
+   ]
+  },
+  "two_arm_lift": {
+   "baseline_capagent0": "1/10 (10%)",
+   "aspire_validation": "5/5 (100%)",
+   "mechanism": "Single Stage-1 Opus repair (diagnosed hardcoded grasp yaw vs randomized pot yaw from per-seed trace angles) -> 3/3 dbg -> validated 1.0",
+   "skills_admitted": [
+    "derive-grasp-orientation-from-observed-part-axis",
+    "infer-quaternion-convention-from-home-pose"
+   ]
+  }
+ }
+}
