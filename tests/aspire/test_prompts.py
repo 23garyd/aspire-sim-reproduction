@@ -28,6 +28,14 @@ def test_debug_prompt_states_replay_affordance():
     assert "3 attempts" in text
 
 
+def test_debug_prompt_pins_seed_attempts_shape():
+    # R3 live crash: an actor wrote a rich dict shape for seed_attempts instead of
+    # the spec's [[seed, attempts], ...] pairs, which crashed the coordinator's
+    # discipline check. Pin a concrete example so actors match the accepted shape.
+    text = (PROMPTS / "actor_debug.md").read_text()
+    assert "[[0, 1], [1, 2]]" in text
+
+
 def test_evosearch_prompt_requires_reading_top_programs():
     text = (PROMPTS / "actor_evosearch.md").read_text().lower()
     assert "read" in text and "top" in text  # actors get PATHS; must be told to read them

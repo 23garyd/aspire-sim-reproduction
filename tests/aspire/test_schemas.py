@@ -110,3 +110,39 @@ def test_actor_report_malformed_rate_raises(tmp_path):
                              "debug_validation_rate": "high"}))
     with pytest.raises(ReportError, match="debug_validation_rate"):
         ActorReport.load(p)
+
+
+def _report_with(seed_attempts, tmp_path, name="report.json"):
+    p = tmp_path / name
+    p.write_text(json.dumps({"outcome": "fail", "diagnosis": "d", "code_path": "c.py",
+                             "seed_attempts": seed_attempts}))
+    return p
+
+
+def test_seed_attempts_normalizes_live_actor_dict_payload(tmp_path):
+    # R3 live crash: the actor wrote this rich dict shape; old code iterated the
+    # DICT KEYS into 1-tuples (("0",),), so coordinator.py's sa[1] IndexError'd.
+    live_payload = {"0": [{"attempt": 1, "code": "fix.py", "score": 1.0,
+                           "result": "pass"}]}
+    r = ActorReport.load(_report_with(live_payload, tmp_path))
+    assert r.seed_attempts == ((0, 1),)
+
+
+def test_seed_attempts_normalizes_dict_of_counts(tmp_path):
+    r = ActorReport.load(_report_with({"0": 2, "1": 1}, tmp_path))
+    assert r.seed_attempts == ((0, 2), (1, 1))
+
+
+def test_seed_attempts_accepts_spec_list_form(tmp_path):
+    r = ActorReport.load(_report_with([[0, 5], [1, 1]], tmp_path))
+    assert r.seed_attempts == ((0, 5), (1, 1))
+
+
+def test_seed_attempts_wrong_arity_raises(tmp_path):
+    with pytest.raises(ReportError, match="seed_attempts"):
+        ActorReport.load(_report_with([[0]], tmp_path))
+
+
+def test_seed_attempts_non_numeric_raises(tmp_path):
+    with pytest.raises(ReportError, match="seed_attempts"):
+        ActorReport.load(_report_with([["x", "y"]], tmp_path))

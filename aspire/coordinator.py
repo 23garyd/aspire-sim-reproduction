@@ -259,8 +259,13 @@ class TaskPipeline:
             # Appendix E three-attempt cap: an actor that blew past max_seed_attempts
             # on any seed broke repair discipline — its proposed_skills (but not the
             # separately-vetted extraction candidates above) are ineligible.
+            # Arity guard (belt-and-braces alongside schemas._normalize_seed_attempts):
+            # a report loaded by OLD reader code could still carry malformed 1-tuple
+            # entries; tolerate them here rather than sa[1] IndexError-ing (R3 live
+            # crash: an over-eager actor's rich dict shape produced exactly this).
             violation = next((sa for sa in winning_report.seed_attempts
-                              if sa[1] > self.cfg.max_seed_attempts), None)
+                              if len(sa) >= 2 and sa[1] > self.cfg.max_seed_attempts),
+                             None)
             if violation is not None:
                 seed, attempts = violation
                 _atomic_write(self.task_dir / "DISCIPLINE_VIOLATION",

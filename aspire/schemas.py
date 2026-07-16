@@ -50,6 +50,27 @@ class ReportError(ValueError):
     """report.json missing, malformed, or violating the contract."""
 
 
+def _normalize_seed_attempts(raw):
+    """Accepts the spec's canonical list-of-pairs form AND the actor-friendly dict
+    forms actors have been observed to write in the wild (R3 live crash: an actor
+    wrote {"0": [{...one dict per attempt...}]}; the old code iterated the DICT
+    KEYS into 1-tuples, and coordinator.py's sa[1] then IndexError'd). Returns a
+    sorted tuple of (seed:int, attempts:int) pairs; raises ValueError/TypeError on
+    anything else so the caller can wrap it into a ReportError."""
+    if isinstance(raw, dict):
+        # {"0": [ {...}, {...} ]} (one entry per attempt) or {"0": 2} (a count)
+        out = []
+        for k, v in raw.items():
+            n = len(v) if isinstance(v, list) else int(v)
+            out.append((int(k), n))
+        return tuple(sorted(out))
+    out = []
+    for entry in raw:                      # spec form: [[seed, attempts], ...]
+        seed, attempts = entry             # ValueError on wrong arity -> caught by load()
+        out.append((int(seed), int(attempts)))
+    return tuple(sorted(out))
+
+
 @dataclass(frozen=True)
 class ProposedSkill:
     name: str
@@ -94,9 +115,11 @@ class ActorReport:
         except (TypeError, ValueError) as e:
             raise ReportError(f"bad debug_validation_rate: {e}") from e
         try:
-            seed_attempts = tuple(tuple(x) for x in data.get("seed_attempts", []))
-        except TypeError as e:
-            raise ReportError(f"bad seed_attempts: {e}") from e
+            seed_attempts = _normalize_seed_attempts(data.get("seed_attempts", []))
+        except (ValueError, TypeError, KeyError) as e:
+            raise ReportError(
+                f"bad seed_attempts in {path.name}: expected [[seed, attempts], ...] "
+                f"or {{seed: attempts|list}} ({e})") from e
         return cls(outcome=data["outcome"], diagnosis=data["diagnosis"],
                    code_path=data["code_path"], proposed_skills=skills,
                    debug_validation_rate=debug_validation_rate,

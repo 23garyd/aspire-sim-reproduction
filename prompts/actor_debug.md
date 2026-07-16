@@ -6,7 +6,7 @@ ONE debugging seed through the same audited engine as the main pipeline. Output:
 score and a per-primitive trace summary; artifacts land under `replays/seed<N>_attempt<K>/`.
 - Budget: max 3 attempts per debug seed for your whole session — spend them wisely.
 - Only debugging seeds are allowed; validation seeds are structurally off-limits.
-- Record your per-seed attempts in report.json's `seed_attempts`.
+- Record attempts as "seed_attempts": [[seed, attempts_used], ...] — e.g. [[0, 1], [1, 2]].
 A repair you replayed and saw pass is a VALIDATED repair; say so in your report. If you
 exhaust the budget without a passing replay, report outcome "fail" with your best fix.
 

@@ -574,6 +574,25 @@ def test_attempt_cap_violation_blocks_report_skills(tmp_path):
     assert (task / "DISCIPLINE_VIOLATION").exists()
 
 
+def test_malformed_seed_attempts_entry_does_not_crash_discipline_check(tmp_path):
+    # L2 belt-and-braces: a report loaded by OLD reader code (pre-normalization)
+    # could still be reprocessed with a malformed 1-tuple entry; the discipline
+    # genexpr must tolerate it rather than IndexError on sa[1] (R3 live crash).
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(1.0)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    malformed = ActorReport(outcome="success", diagnosis="d", code_path="fix_code.py",
+                            proposed_skills=_skillful_report().proposed_skills,
+                            seed_attempts=(("0",),))          # malformed: 1-tuple, no sa[1]
+    actor = FakeActor(reports=[malformed], extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    result = TaskPipeline(task, engine, actor, FakeJudge([True, True]), lib, CFG).run()
+    assert result.val_score == 1.0
+    assert not (task / "DISCIPLINE_VIOLATION").exists()
+    names = [s.name for s in lib.load_all()]
+    assert "multi-angle-approach" in names   # not treated as a discipline violation
+
+
 def test_stale_blocked_md_cleared_on_fresh_run(tmp_path):
     task = _task(tmp_path)
     (task / "BLOCKED.md").write_text("# stale from prior attempt")
