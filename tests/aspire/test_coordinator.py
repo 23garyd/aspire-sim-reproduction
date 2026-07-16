@@ -653,3 +653,26 @@ def test_attempts_reset_between_rounds(tmp_path):
     lib = SkillLibrary(tmp_path / "lib")
     TaskPipeline(task, engine, actor, FakeJudge([True]), lib, cfg).run()
     assert actor.seen == ["{}", "{}"]
+
+
+def test_materialized_shim_executes_from_outside_repo(tmp_path):
+    # tmp_path (pytest's tmp dir) is outside the repo checkout: this pins that the
+    # shim resolves `aspire` for real task dirs, which live under ~/aspire_runs/...,
+    # not merely under a repo-nested tmp dir.
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0),   # Stage 0 fails -> enters debug loop
+                         ExecuteResult(1.0),   # fix_code.py on S_dbg passes
+                         ExecuteResult(0.9)])  # Stage 2
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[ActorReport(outcome="success", diagnosis="d",
+                                           code_path="fix_code.py")],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    TaskPipeline(task, engine, actor, FakeJudge([True]), lib, CFG).run()
+
+    (task / "fix.py").write_text("navigate_to_pose([1,2,0])")
+    import subprocess
+    proc = subprocess.run(["./replay", "fix.py", "0"], cwd=task,
+                          capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, proc.stderr
+    assert "score:" in proc.stdout

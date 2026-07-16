@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -66,7 +67,11 @@ def main(argv=None) -> int:
     if not recipe_path.exists():
         print("no replay.json (replay not materialized here)", file=sys.stderr)
         return 2
-    recipe = json.loads(recipe_path.read_text())
+    try:
+        recipe = json.loads(recipe_path.read_text())
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        print(f"malformed replay.json: {e}", file=sys.stderr)
+        return 2
 
     s_dbg = recipe.get("s_dbg", [])
     if seed not in s_dbg:
@@ -74,32 +79,58 @@ def main(argv=None) -> int:
               "(validation seeds are off-limits)", file=sys.stderr)
         return 3
 
+    program = cwd / program_arg
+    if not program.exists():
+        print(f"program not found: {program_arg}", file=sys.stderr)
+        return 2
+
     max_attempts = recipe.get("max_attempts_per_seed", 3)
     attempts_path = cwd / "replays" / "attempts.json"
     attempts = {}
     if attempts_path.exists():
-        attempts = json.loads(attempts_path.read_text())
+        try:
+            attempts = json.loads(attempts_path.read_text())
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            print(f"malformed replays/attempts.json: {e}", file=sys.stderr)
+            return 2
     count = attempts.get(str(seed), 0)
     if count >= max_attempts:
         print(f"attempt cap reached for seed {seed} ({count}/{max_attempts})",
               file=sys.stderr)
         return 4
 
-    # Increment + persist ATOMICALLY before executing: a crashed replay still
-    # consumed an attempt (deliberate, prevents cap evasion via kill).
+    # Atomic file replace (tmp + os.replace) BEFORE executing: a crashed replay
+    # still consumed an attempt (deliberate, prevents cap evasion via kill). This
+    # is atomic w.r.t. the write itself; the read-modify-write of the counter
+    # assumes the actor replays sequentially — concurrent replays could double-
+    # spend one attempt. S_val is unaffected either way (this budget only gates
+    # replay.py, never Stage 2).
     attempt_no = count + 1
     attempts[str(seed)] = attempt_no
     _atomic_write(attempts_path, json.dumps(attempts))
 
-    engine = _build_engine(recipe["engine"])
-    program = cwd / program_arg
     try:
-        result = engine.execute(program, [seed])
+        engine = _build_engine(recipe["engine"])
+    except (KeyError, TypeError) as e:
+        print(f"malformed replay.json: bad engine recipe: {e}", file=sys.stderr)
+        return 2
+
+    # M1/M3: execute a COPY inside the attempt dir, never the original path. This
+    # keeps audit markers (.AUDIT_REJECTED) scoped to replays/ instead of polluting
+    # the task-dir namespace the coordinator manages, and makes path-escape via
+    # ../ or an absolute program_arg harmless — the executed artifact is always
+    # inside out_dir regardless of where program_arg pointed.
+    out = cwd / "replays" / f"seed{seed}_attempt{attempt_no}"
+    out.mkdir(parents=True, exist_ok=True)
+    exec_copy = out / Path(program_arg).name
+    shutil.copyfile(program, exec_copy)
+
+    try:
+        result = engine.execute(exec_copy, [seed])
     except EngineError as e:
         print(str(e), file=sys.stderr)
         return 5
 
-    out = cwd / "replays" / f"seed{seed}_attempt{attempt_no}"
     media_dir = out / "media"
     media_dir.mkdir(parents=True, exist_ok=True)
     _atomic_write(out / "trace.json",

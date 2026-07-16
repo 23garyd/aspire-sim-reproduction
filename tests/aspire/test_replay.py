@@ -52,7 +52,50 @@ def test_replay_audits_cheating_program(tmp_path, monkeypatch, capsys):
     rc = replay.main(["cheat.py", "0"])
     assert rc == 0                              # audit-reject is DATA (score 0), not an error
     assert "score: 0.0" in capsys.readouterr().out
-    assert (tmp_path / "cheat.py.AUDIT_REJECTED").exists()
+    # M1: executed as a COPY inside the attempt dir, so the marker lands there too,
+    # not polluting the task-dir namespace the coordinator manages.
+    assert (tmp_path / "replays" / "seed0_attempt1" / "cheat.py.AUDIT_REJECTED").exists()
+    assert not (tmp_path / "cheat.py.AUDIT_REJECTED").exists()
+
+
+def test_replay_executes_a_copy_not_the_original(tmp_path, monkeypatch):
+    # M3: path-escape via ../ or absolute program args is harmless because the
+    # executed artifact always lives inside the attempt dir.
+    _setup(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    rc = replay.main(["fix.py", "1"])
+    assert rc == 0
+    exec_copy = tmp_path / "replays" / "seed1_attempt1" / "fix.py"
+    assert exec_copy.exists()
+    assert exec_copy.read_text() == (tmp_path / "fix.py").read_text()
+
+
+def test_replay_missing_program_exits_2(tmp_path, monkeypatch, capsys):
+    _setup(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    rc = replay.main(["ghost.py", "0"])
+    assert rc == 2
+    assert "ghost.py" in capsys.readouterr().err
+    assert not (tmp_path / "replays" / "attempts.json").exists()
+
+
+def test_replay_corrupt_replay_json_exits_2(tmp_path, monkeypatch, capsys):
+    (tmp_path / "replay.json").write_text("{not valid json")
+    (tmp_path / "fix.py").write_text("navigate_to_pose([1,2,0])")
+    monkeypatch.chdir(tmp_path)
+    rc = replay.main(["fix.py", "0"])
+    assert rc == 2
+    assert "replay.json" in capsys.readouterr().err
+
+
+def test_replay_corrupt_attempts_json_exits_2(tmp_path, monkeypatch, capsys):
+    _setup(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "replays").mkdir()
+    (tmp_path / "replays" / "attempts.json").write_text("{not valid json")
+    rc = replay.main(["fix.py", "0"])
+    assert rc == 2
+    assert "attempts.json" in capsys.readouterr().err
 
 
 def test_replay_usage_errors(tmp_path, monkeypatch, capsys):

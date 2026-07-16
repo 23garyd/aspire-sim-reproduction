@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -69,8 +70,21 @@ class TaskPipeline:
         _atomic_write(self.task_dir / "replay.json", json.dumps(
             {"engine": recipe, "s_dbg": list(self.cfg.s_dbg),
              "max_attempts_per_seed": self.cfg.max_seed_attempts}, indent=1))
+        # Task dirs live OUTSIDE the repo (e.g. ~/aspire_runs/...); a bare
+        # `python3 -m aspire.replay` there raises ModuleNotFoundError because the
+        # `aspire` package is only importable from the repo root. Point PYTHONPATH
+        # at this repo checkout and use the pipeline's own interpreter (sys.executable)
+        # so the shim works regardless of which python/venv launched the run.
+        # CAVEAT (verify in R3): this assumes the actor sandbox permits reading files
+        # outside the task dir at the OS level. If a future sandbox blocks that,
+        # PYTHONPATH alone won't suffice and aspire/ would need to be vendored into
+        # the task dir instead.
         shim = self.task_dir / "replay"
-        _atomic_write(shim, "#!/bin/bash\nexec python3 -m aspire.replay \"$@\"\n")
+        repo_root = Path(__file__).resolve().parents[1]
+        shim_body = (f"#!/bin/bash\n"
+                     f"exec env PYTHONPATH=\"{repo_root}:$PYTHONPATH\" "
+                     f"\"{sys.executable}\" -m aspire.replay \"$@\"\n")
+        _atomic_write(shim, shim_body)
         shim.chmod(0o755)
         attempts = self.task_dir / "replays" / "attempts.json"
         attempts.parent.mkdir(parents=True, exist_ok=True)
