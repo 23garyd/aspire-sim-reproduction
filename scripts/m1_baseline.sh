@@ -27,7 +27,7 @@ TASKS=(cube_lifting cube_stack two_arm_handover nut_assembly two_arm_lift)
 MODEL="${CAPX_MODEL:?set CAPX_MODEL to the model id served by the :8110 proxy}"
 TRIALS="${TRIALS:-10}"
 
-curl -s -m 5 http://127.0.0.1:8110/chat/completions -o /dev/null -w "%{http_code}" \
+curl -s -m 45 http://127.0.0.1:8110/chat/completions -o /dev/null -w "%{http_code}" \
      -H 'Content-Type: application/json' \
      -d '{"model":"'"$MODEL"'","messages":[{"role":"user","content":"ok"}],"max_tokens":1}' \
   | grep -q 200 || { echo "FAIL: LLM proxy on :8110 not answering for model $MODEL"; exit 1; }
