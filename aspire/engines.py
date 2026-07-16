@@ -32,6 +32,9 @@ class FakeEngine:
             raise EngineError("FakeEngine exhausted: more execute() calls than scripted results")
         return self._results.pop(0)
 
+    def describe(self) -> dict:
+        return {"type": "fake", "scores": [r.score for r in self._results]}
+
 
 class AuditedEngine:
     """Decorator engine: every program is mechanically audited before execution.
@@ -59,6 +62,9 @@ class AuditedEngine:
                                 status="error", result_summary="; ".join(violations),
                                 duration_ms=0.0, media=[])],
             raw_dir="")
+
+    def describe(self) -> dict:
+        return self._inner.describe()
 
 
 class CapxEngine:
@@ -92,3 +98,7 @@ class CapxEngine:
             return ExecuteResult.from_json(result_file.read_text())
         except (json.JSONDecodeError, KeyError, TypeError) as e:
             raise EngineError(f"malformed result.json: {e}") from e
+
+    def describe(self) -> dict:
+        return {"type": "capx", "cmd_prefix": list(self._prefix),
+                "out_root": str(self._out_root), "timeout_s": self._timeout}

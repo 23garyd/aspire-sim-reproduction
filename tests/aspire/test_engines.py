@@ -120,3 +120,14 @@ def test_audited_engine_clears_stale_marker_on_clean_rewrite(tmp_path):
     res = eng.execute(prog, [0])
     assert res.score == 0.8
     assert not marker.exists(), "stale marker must be cleared on clean execution"
+
+
+def test_engine_describe_recipes(tmp_path):
+    fe = FakeEngine([ER(0.5), ER(1.0)])
+    assert fe.describe() == {"type": "fake", "scores": [0.5, 1.0]}
+    ce = CapxEngine(cmd_prefix=["python", "run.py"], out_root=tmp_path / "o", timeout_s=99)
+    d = ce.describe()
+    assert d["type"] == "capx" and d["cmd_prefix"] == ["python", "run.py"]
+    assert d["out_root"].endswith("o") and d["timeout_s"] == 99
+    ae = AuditedEngine(fe)
+    assert ae.describe() == fe.describe()
