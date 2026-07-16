@@ -35,7 +35,7 @@ echo "proxy OK (model=$MODEL, trials/task=$TRIALS)"
 
 shopt -s nullglob
 for t in "${TASKS[@]}"; do
-  matches=(env_configs/*"$t"*_privileged.yaml)
+  matches=(env_configs/*/*"$t"*_privileged.yaml)
   cfg="${matches[0]:-}"
   [ -n "$cfg" ] || { echo "FAIL: no privileged env config matching '$t'"; exit 1; }
   echo "== CaP-Agent0 baseline: $t ($cfg, model=$MODEL, trials=$TRIALS) =="
