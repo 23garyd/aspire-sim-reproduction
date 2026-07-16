@@ -100,6 +100,15 @@ add an EXTRACTION_FAILED marker or stderr line so "extraction proposed nothing" 
 Deferred to G5 (need real engine): fast path from successful baseline seed (needs
 per-seed outcomes), initial scene snapshot, runtime task-language check.
 
+**G5 DONE (2026-07-15).** Golden episode checked in (tests/aspire/golden/) and the
+exit criterion met live: real env + real actor + real trace + real skills admitted —
+see runs/2026-07-15-first-live-e2e/. On-box discoveries folded back: submodules +
+robosuite extra (m0 script), --workdir (CaP-X relative-path configs), acceptEdits for
+headless actors, real M1 task roster (no door/pick_place_can upstream).
+**New backlog item (from the live actor's BLOCKED.md):** actors have no execution
+affordance for App E's inner per-seed fix.py replay loop — fixes execute
+coordinator-side only. Consider a rate-limited replay command exposed to actors.
+
 ### Ordering rationale
 G1–G4 are GPU-free and fully testable with fakes → they proceed on the Mac immediately
 and keep every review cycle cheap. G5 is the only simhost-bound phase and was already the
