@@ -145,5 +145,7 @@ docker cp a2-ultra-sim:/tmp/stand.png ./stand.png   # then open it
 | `examples/a2_mode_probe.py` | Probe available actions / current FSM state. |
 | `examples/live_a2_readloop.py` | Stream and print live joint state. |
 
+- **Link probe** — `scripts/link_probe.py`: stdlib-only 50 Hz UDP link characterizer for the future WiFi-vs-NearLink benchmark. Run `--role echo --port 4700` on the far end and `--role probe --target HOST:4700 --hz 50 --duration 10 --json` on the near end to get RTT/jitter/loss plus `max_gap_ms` (the longest echo-free span — the deadman-relevant number, since the A2 servo watchdog faults at ~1s without a command).
+
 Full design notes, feasibility assessment, and the API-mapping spike live in the Obsidian note
 `octos/octos_aspire.md`.
