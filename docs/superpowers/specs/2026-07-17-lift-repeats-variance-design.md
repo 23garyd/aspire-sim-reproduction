@@ -39,14 +39,14 @@ evosearch rescue vs total failure).
   yaml, same LLM proxy setup.
 - **Per-repeat isolation** (state markers live in the task dir; the library is
   mutated by admission):
-  - `~/aspire_runs/lift_repeats/rep_NN/robosuite/two_arm_lift/` — fresh task
+  - `~/aspire_runs/lift_repeats/rep_N/robosuite/two_arm_lift/` — fresh task
     dir containing ONLY the pristine baseline `code.py` (byte-identical in m3
     and m3x task dirs; verified the pipeline never writes that path — task.md,
     traces/, skills.md are materialized by TaskPipeline).
-  - `~/aspire_runs/lift_repeats/rep_NN/skill_library/` — fresh EMPTY library
+  - `~/aspire_runs/lift_repeats/rep_N/skill_library/` — fresh EMPTY library
     (verified `SkillLibrary.load_all()/retrieve()` return `[]` on an empty
     dir; M3X itself started empty).
-  - `~/aspire_runs/lift_repeats/rep_NN/exec/` — per-repeat out-root.
+  - `~/aspire_runs/lift_repeats/rep_N/exec/` — per-repeat out-root.
 - **Metrics per repeat** (from the CLI's JSON result line + task-dir
   artifacts): stage_reached, dbg_score, val_score, mechanism (Stage-1 round
   that won / evosearch round / none), skills admitted. The campaign-level
