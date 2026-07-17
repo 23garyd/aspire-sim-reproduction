@@ -1,0 +1,24 @@
+{
+ "meta": {
+  "date": "2026-07-16",
+  "campaign": "M3X \u2014 extended validation (s_val=100-119, n=20), replay-equipped actors",
+  "baselines": "same failed CaP-Agent0 programs as M3 pilot",
+  "anchor": "runs/2026-07-15-m1-baseline-pilot",
+  "note": "Honest variance finding: lift contradicts the M3 pilot (1.0@n=5 then, 0.0@n=20 now) \u2014 agentic repair on the hardest task is high-variance across campaign runs. Handover strengthened AND cheapened (Stage-1 only, no evosearch)."
+ },
+ "results": {
+  "two_arm_handover": {
+   "baseline": "3/10 (30%)",
+   "aspire_val_n20": "19/20 (95%)",
+   "mechanism": "Stage-1 repair, replay-validated by the actor (4 attempts: 2+1+1); NO evosearch needed (vs evosearch-rescue in the M3 pilot)",
+   "skills": "1 proposed (identical from actor+extraction), judge-REJECTED as task-specific"
+  },
+  "two_arm_lift": {
+   "baseline": "1/10 (10%)",
+   "aspire_val_n20": "0/20 (0%)",
+   "mechanism": "2 replay-equipped debug rounds (9/9 attempts each) + evosearch 5 rounds x 3 candidates ALL 0.0 -> baseline remained winner",
+   "m3_pilot_contrast": "1.0 dbg / 1.0 val@n=5 in the previous campaign \u2014 run-to-run variance dominates on this task",
+   "skills": "bounded-action-budget-guard admitted from extraction despite val 0.0 (see backlog: consider val-score gate on admission)"
+  }
+ }
+}

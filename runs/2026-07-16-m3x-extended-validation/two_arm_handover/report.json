@@ -1,0 +1,16 @@
+{
+  "outcome": "success",
+  "diagnosis": "Every primitive returned status ok (no IK/perception failure), yet the task scored 0 because the hammer was never actually secured by Arm1 and fell to the floor at release. Root cause is a grasp-geometry error, not a motion or perception failure: the baseline had Arm0 grasp the MIDDLE of the hammer handle (the pose returned by get_hammer_pose), so after transport/reorientation only a short ~7cm stub of handle projected toward Arm1. Because the two grippers must keep >8cm of clearance, Arm1 was forced onto or beyond the handle TIP and closed on empty air (keyframes step9-11 show Arm1's jaws shutting with nothing between them and the hammer dropping straight down when Arm0 opened). Merely moving Arm1's target inward does not help (verified: attempt 1 at handover_x-0.01 still missed), because the exposed stub is shorter than the required clearance. The repair moves Arm0's grasp to NEAR THE HEAD END of the handle (offset -0.05 in Y, the head direction in the initial pose) so the full handle projects toward Arm1 after reorientation; Arm1 then grasps the mid/far handle (arm0_hold_x + 0.10) with solid clearance. Validated by replay: score 1.0 on debugging seeds 0, 1, and 2. The handover geometry is fixed regardless of the hammer's initial position, so the single fix is seed-independent.",
+  "code_path": "fix_code.py",
+  "seed_attempts": [[0, 2], [1, 1], [2, 1]],
+  "proposed_skills": [
+    {
+      "name": "handover_grasp_near_end_for_clearance",
+      "category": "bimanual_manipulation",
+      "failure_signature": "Two-arm handover where all primitives report ok but the receiving arm's gripper closes on empty air and the object drops when the giving arm releases; the giver grasped the object's midpoint, leaving too little exposed for the receiver to grip with inter-gripper clearance.",
+      "when_to_apply": "Handing an elongated object (tool, rod, handle) from one gripper to another when a localization call returns the object's center/midpoint and both grippers need a minimum separation to avoid colliding.",
+      "strategy": "Have the giving arm grasp near ONE END of the object (offset along the object's long axis toward that end) rather than the center, so the entire remaining length is exposed to the receiving arm. The receiver then grasps the mid/far portion of the exposed length, staying at least the gripper-clearance distance from the giver and comfortably short of the far tip. Keep the end-offset large enough to expose a graspable span but short of the terminal feature (e.g. a hammer head) so the giver's own grasp stays on the shaft.",
+      "code_sketch": "pos, _ = get_object_pose()  # returns midpoint\nend_offset = 0.05  # toward the end you want to keep on the giver's side\ngrasp = np.array([pos[0], pos[1] - end_offset, pos[2]])\ngoto_pose_arm0(grasp, down_quat, z_approach=0.12); close_gripper_arm0()\n# ...lift, transport to handover_x, reorient object along the arms' axis...\narm0_hold_x = handover_x - 0.10\ngoto_pose_arm0([arm0_hold_x, 0.0, z], reorient_quat)\n# receiver grasps mid/far exposed length, >clearance from giver:\ngoto_pose_arm1([arm0_hold_x + 0.10, 0.0, z], recv_quat, z_approach=0.12)\nclose_gripper_arm1(); open_gripper_arm0()"
+    }
+  ]
+}

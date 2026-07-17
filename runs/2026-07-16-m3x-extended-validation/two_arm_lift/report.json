@@ -1,0 +1,32 @@
+{
+  "outcome": "fail",
+  "diagnosis": "Every primitive returns ok on all three debugging seeds (FAILURES: 0), so the causal break is a SILENT grasp failure, not a traced error: the pot never leaves the table (score 0.0). The zoomed perception keyframes show each handle is a FLAT, HORIZONTAL rectangular LOOP protruding sideways from the pot at mid-height, and get_handle{0,1}_pos returns the loop CENTER x,y with a bogus constant table-level z (0.00797815 for every handle/seed). The baseline and all repairs air-grasped for three compounding reasons: (1) a gripper centered on the loop (or descended to the reported table-level z) closes its fingers INSIDE the loop's open hole and pinches nothing, at ANY descent height -- the graspable OUTER bar runs tangentially and must be bracketed by a RADIALLY-closing top-down pinch offset OUTWARD from the loop center; (2) top-down quaternions built from scratch are reachable for the left arm (arm0) but not the right (arm1), which either refuses to descend or whose IK falls back to a pose that sweeps the pot -- only each arm's OWN natural rest orientation reliably reaches a clean, collision-free top-down pose (giving both arms arm0's rest orientation produced the cleanest symmetric descent); (3) the two arms crowd the small pot, so extending outward to reach the outer bar tends to drive a wrist/elbow into the pot and rotate it. The synthesized fix_code.py grasps top-down with the reachable natural orientation (yawed by the perceived handle-to-handle angle so the radial jaws track the pot's rotation), offsets each grasp point outward onto the loop's outer bar, and overrides the bogus perception z with the loop height. It targets the geometrically-correct bar but I could NOT obtain a passing replay within the 3-attempts-per-seed budget (9/9 used): centered approaches (OUT=0) confirm reachability and land both grippers cleanly on the loops but pinch the open hole; the outward outer-bar offset (OUT=0.03) still disturbs the pot during the simultaneous bimanual approach on seeds 0 and 1. Remaining gap: a collision-free bimanual trajectory that reaches each loop's outer bar without crowding the pot (e.g. per-arm waypoints or wider outward standoff before a purely vertical descent). NOTE: the pre-existing report.json for this task claimed outcome success with 1.0 scores; that is contradicted by the audited engine (result.json score 0.0) and by every replay in replays/ -- baseline and all repairs score 0.0.",
+  "code_path": "fix_code.py",
+  "seed_attempts": [[0, 3], [1, 3], [2, 3]],
+  "proposed_skills": [
+    {
+      "name": "grasp_loop_handle_on_a_bar_not_its_center",
+      "category": "grasping",
+      "failure_signature": "All primitives return ok but the object is never lifted; after closing, the object stays put; the target is a ring/loop/bail handle and the gripper was centered on the loop, so its fingers close inside the loop's OPEN HOLE and pinch air at every descent height.",
+      "when_to_apply": "Grasping a flat loop, ring, bail, or closed-handle whose perceived position is the loop CENTER (an open hole). Common for pot/bucket/kettle handles and drawer bails. Suspect this whenever grasps at a range of heights all fail with the object untouched.",
+      "strategy": "Never grasp the loop center. Offset the grasp point outward (or to one side) onto a SOLID bar of the loop, and orient the jaws to close ACROSS that bar (perpendicular to the bar's long axis) so one finger drops outside the loop and the other into the hole, bracketing the bar. Derive the offset direction from perceived geometry (e.g. radially outward from the object center for a side handle).",
+      "code_sketch": "center = 0.5*(h0[:2]+h1[:2])\nout = (h[:2]-center); out/=norm(out)\ngrasp_xy = h[:2] + out*BAR_OFFSET   # onto the outer bar, not the hole\n# jaws close along 'out' (across the tangential outer bar)\ngoto(pre=[grasp_xy, BAR_Z+0.12], q); goto([grasp_xy, BAR_Z], q, z_approach=0.1); close()"
+    },
+    {
+      "name": "grasp_with_each_arms_natural_orientation",
+      "category": "manipulation",
+      "failure_signature": "A hand-constructed target orientation is reachable for one arm but the other arm refuses to descend (stays elevated) or its IK returns a wild solution that sweeps/collides with the scene; the trace still logs the motion as ok.",
+      "when_to_apply": "Multi-arm or awkward-reach manipulation where a from-scratch grasp quaternion cannot be reached by every arm (mirror-image arms, workspace edges).",
+      "strategy": "Capture each arm's current/rest orientation (reachable by construction and already pointing at the workspace) and build the grasp orientation from it by applying only a minimal yaw about vertical to track the object's in-plane rotation, instead of constructing a pose from scratch. If one arm's own rest pose IK-rolls, reuse the well-behaved arm's rest orientation for both.",
+      "code_sketch": "_, q0 = get_arm0_pose(); _, q1 = get_arm1_pose()\ntheta = atan2(long[1], long[0]); yaw=[0,0,sin(theta/2),cos(theta/2)]\nquat0 = quat_mul(yaw, q0); quat1 = quat_mul(yaw, q0)  # reuse reachable rest orientation"
+    },
+    {
+      "name": "override_constant_perception_z",
+      "category": "perception",
+      "failure_signature": "A localization primitive returns the SAME z across all objects, seeds, and calls (a constant near table height), and grasps at that z miss, push, or tip the object because the true graspable height is higher.",
+      "when_to_apply": "Any manipulation where the object-position query returns a suspicious constant or table-level z while x,y track correctly; verify by comparing z across several calls/objects -- if identical, treat z as unusable.",
+      "strategy": "Use the reliable x,y from perception but substitute a physically-estimated grasp height (calibrated from keyframes / object class) for the reported z, and approach top-down to that estimated height.",
+      "code_sketch": "p = get_object_pos()   # x,y trusted; z is a constant artifact\nBAR_Z = 0.045          # estimated true graspable height\ngoto([p[0],p[1],BAR_Z+0.12], q); goto([p[0],p[1],BAR_Z], q, z_approach=0.1); close()"
+    }
+  ]
+}
