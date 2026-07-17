@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "date": "2026-07-17",
+    "campaign": "Lift campaign-repeats variance experiment (N=5 planned) on two_arm_lift",
+    "spec": "docs/superpowers/specs/2026-07-17-lift-repeats-variance-design.md",
+    "status": "INCOMPLETE — halted after 2 valid repeats; Anthropic API credit balance exhausted",
+    "baseline": "M1 CaP-Agent0 trial_01 program (md5 0ada19ef), byte-identical to M3/M3X baseline",
+    "config": "s_dbg [0,1,2], s_val 100-119 (n=20), theta 1.0, debug_rounds 2, model_repair opus, model_propose sonnet — identical to M3X",
+    "isolation": "each repeat: fresh task dir + fresh EMPTY skill library + own exec root"
+  },
+  "repeats": {
+    "rep_1": {"valid": true, "stage_reached": "validated", "dbg_score": 1.0, "val_score": 1.0, "mechanism": "Stage-1 trace-guided repair, dbg 1.0 (no evosearch)", "admitted": ["orient_top_down_grasp_to_object_inplane_axis", "top_down_grasp_aligned_to_object_axis"]},
+    "rep_2": {"valid": true, "stage_reached": "validated", "dbg_score": 1.0, "val_score": 0.95, "mechanism": "Stage-1 trace-guided repair, dbg 1.0 (no evosearch)", "admitted": ["top_down_grasp_aligned_to_perceived_axis", "nearest_feature_arm_assignment", "nearest_handle_arm_assignment"]},
+    "rep_3": {"valid": false, "reason": "INFRA: claude -p actor exited 1 mid-run (credit balance too low); coordinator aborted exit 2. NOT an experiment failure. Partial debug report present (outcome fail). Re-run fresh after credits restored."},
+    "rep_4": {"valid": false, "reason": "INFRA: claude -p actor exited 1 immediately (credit balance too low). Re-run fresh."},
+    "rep_5": {"valid": false, "reason": "INFRA: killed while starting — credits already exhausted; would have failed identically. Re-run fresh."}
+  },
+  "valid_data_points_so_far": {
+    "lift_repair_successes": "2/2 valid campaign repeats reached validated success (1.0, 0.95), both via Stage-1 trace-guided repair, no evosearch",
+    "with_history": "pilot=success(5/5), M3X=fail(0/20), rep_1=success(20/20), rep_2=success(19/20) => 3 successes / 1 failure across 4 clean campaign runs",
+    "provisional_read": "Lift repair appears predominantly successful; M3X 0/20 looks like the minority/tail outcome, NOT the representative one. NOT yet conclusive — needs reps 3-5 (and ideally the planned N=5, extendable to N=10) once API credits are restored.",
+    "note": "reps 3-5 are INFRA failures (out of credits), NOT lift-repair failures, and must not be counted against the success rate."
+  },
+  "blocker": "Anthropic API account credit balance exhausted (`claude -p` returns 'Credit balance is too low'). Top up billing, then: rm -rf ~/aspire_runs/lift_repeats/rep_3 rep_4 rep_5 && bash ~/start_lift_repeats.sh (reps 1,2 have VALIDATION_DONE and are skipped; 3,4,5 re-run fresh)."
+}
