@@ -113,3 +113,44 @@ def test_build_engine_wraps_with_audit(tmp_path):
     ns2 = argparse.Namespace(engine="capx", fake_scores="",
                              capx_cmd="echo x", out_root=str(tmp_path))
     assert isinstance(_build_engine(ns2), AuditedEngine)
+
+
+def test_parse_seed_list():
+    from aspire.run import _parse_seed_list
+    assert _parse_seed_list("0,1,2") == [0, 1, 2]
+    assert _parse_seed_list("100-103") == [100, 101, 102, 103]
+    assert _parse_seed_list("100-101,200") == [100, 101, 200]
+    assert _parse_seed_list("5") == [5]
+    import pytest as _pt
+    for bad in ("3-1", "x", "", "1,,2"):
+        with _pt.raises(ValueError):
+            _parse_seed_list(bad)
+
+
+def test_cli_seed_overrides_reach_config(tmp_path):
+    task = tmp_path / "robosuite" / "lift"
+    task.mkdir(parents=True); (task / "code.py").write_text("pass")
+    proc = subprocess.run(
+        [sys.executable, "-m", "aspire.run", "--task-dir", str(task),
+         "--engine", "fake", "--fake-scores", "1.0,0.9",
+         "--library", str(tmp_path / "lib"),
+         "--s-dbg", "0,1", "--s-val", "100-105", "--theta", "0.9"],
+        capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 0, proc.stderr
+    summary = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert summary["config"]["s_dbg"] == [0, 1]
+    assert summary["config"]["s_val"] == [100, 101, 102, 103, 104, 105]
+    assert summary["config"]["theta"] == 0.9
+
+
+def test_cli_rejects_overlapping_seed_sets(tmp_path):
+    task = tmp_path / "robosuite" / "lift"
+    task.mkdir(parents=True); (task / "code.py").write_text("pass")
+    proc = subprocess.run(
+        [sys.executable, "-m", "aspire.run", "--task-dir", str(task),
+         "--engine", "fake", "--fake-scores", "1.0",
+         "--library", str(tmp_path / "lib"),
+         "--s-dbg", "0,1", "--s-val", "1-5"],
+        capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 2
+    assert "must not overlap" in proc.stderr

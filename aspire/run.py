@@ -43,6 +43,34 @@ from aspire.skill_library import SkillLibrary
 _DOMAIN_ERRORS = (ValidationReuseError, EngineError, ActorError, EvosearchError)
 
 
+def _parse_seed_list(spec: str) -> list[int]:
+    """"0,1,2" -> [0,1,2]; "100-103" -> [100,101,102,103] (inclusive);
+    mixes like "100-102,200" -> [100,101,102,200]. Raises ValueError on
+    malformed or backwards ranges/tokens."""
+    if not spec:
+        raise ValueError(f"empty seed spec: {spec!r}")
+    seeds: list[int] = []
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            raise ValueError(f"malformed seed spec: {spec!r}")
+        if "-" in part[1:]:
+            lo_s, _, hi_s = part.partition("-")
+            try:
+                lo, hi = int(lo_s), int(hi_s)
+            except ValueError:
+                raise ValueError(f"malformed seed range: {part!r}") from None
+            if hi < lo:
+                raise ValueError(f"backwards seed range: {part!r}")
+            seeds.extend(range(lo, hi + 1))
+        else:
+            try:
+                seeds.append(int(part))
+            except ValueError:
+                raise ValueError(f"malformed seed: {part!r}") from None
+    return seeds
+
+
 def _atomic_write_json(path: Path, obj) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, indent=1))
@@ -137,11 +165,33 @@ def main(argv=None):
     ap.add_argument("--capx-cmd", default="")
     ap.add_argument("--out-root", default="")
     ap.add_argument("--prompts", default="prompts")
+    ap.add_argument("--s-dbg", default=None,
+                    help="CSV/range seed spec overriding RunConfig.s_dbg, e.g. '0,1,2'")
+    ap.add_argument("--s-val", default=None,
+                    help="CSV/range seed spec overriding RunConfig.s_val, e.g. '100-119'")
+    ap.add_argument("--theta", type=float, default=None,
+                    help="override RunConfig.theta (early-stop score on debugging seeds)")
     args = ap.parse_args(argv)
     if args.engine == "capx" and (not args.capx_cmd or not args.out_root):
         ap.error("--capx-cmd and --out-root are required for --engine capx")
 
-    cfg = RunConfig()
+    overrides = {}
+    try:
+        if args.s_dbg is not None:
+            overrides["s_dbg"] = _parse_seed_list(args.s_dbg)
+        if args.s_val is not None:
+            overrides["s_val"] = _parse_seed_list(args.s_val)
+    except ValueError as e:
+        ap.error(str(e))
+    if args.theta is not None:
+        overrides["theta"] = args.theta
+    defaults = RunConfig().to_dict()
+    resolved_s_dbg = overrides.get("s_dbg", defaults["s_dbg"])
+    resolved_s_val = overrides.get("s_val", defaults["s_val"])
+    if set(resolved_s_dbg) & set(resolved_s_val):
+        ap.error("--s-dbg and --s-val must not overlap")
+
+    cfg = RunConfig(**{**defaults, **overrides})
     engine = _build_engine(args)
 
     if args.tasks_root:
