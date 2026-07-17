@@ -4,3 +4,4 @@ Aspire.pdf
 tmp/
 *.png
 .DS_Store
+.claude/settings.local.json
