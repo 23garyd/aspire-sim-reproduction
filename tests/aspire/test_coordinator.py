@@ -426,6 +426,47 @@ def test_baseline_pass_skips_extraction(tmp_path):
     assert lib.load_all() == []
 
 
+def test_low_val_score_gates_skill_admission(tmp_path):
+    # A run whose winner passes S_dbg but validates BELOW admission_min_val must
+    # not seed the library — skills learned from a near-failing run mislead later
+    # tasks (live: M3X admitted at val 0.0, lift rep_5 at val 0.10). Extraction is
+    # skipped too, so no actor tokens are spent on skills that can't be admitted.
+    task = _task(tmp_path)
+    engine = FakeEngine([ExecuteResult(0.0),   # Stage 0 fails
+                         ExecuteResult(1.0),   # fix passes S_dbg
+                         ExecuteResult(0.1)])  # Stage 2: below the 0.5 gate
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([True, True]), lib, CFG)
+    result = pipe.run()
+    assert result.val_score == 0.1
+    assert result.admitted_skills == ()
+    assert lib.load_all() == []                       # nothing learned
+    assert actor.extract_calls == []                  # extraction skipped
+    gate = json.loads((task / "ADMISSION_GATED").read_text())
+    assert gate["val_score"] == 0.1 and gate["admission_min_val"] == 0.5
+
+
+def test_admission_min_val_boundary_is_inclusive(tmp_path):
+    # val exactly at the threshold admits (>=, not >): the gate excludes only runs
+    # strictly below the bar.
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=2, theta=1.0, debug_rounds=1, s_dbg=[0, 1],
+                    s_val=[100, 101], admission_min_val=0.5)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(1.0), ExecuteResult(0.5)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[ActorReport(outcome="success",
+                                                      diagnosis="d", code_path="fix_code.py")])
+    lib = SkillLibrary(tmp_path / "lib")
+    pipe = TaskPipeline(task, engine, actor, FakeJudge([True]), lib, cfg)
+    pipe.run()
+    assert [s.name for s in lib.load_all()] == ["multi-angle-approach"]
+    assert not (task / "ADMISSION_GATED").exists()
+
+
 def test_dedup_retrieval_is_keyword_ranked(tmp_path):
     from aspire.skill_library import Skill
     task = _task(tmp_path)

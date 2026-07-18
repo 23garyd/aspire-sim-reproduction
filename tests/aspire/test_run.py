@@ -134,13 +134,15 @@ def test_cli_seed_overrides_reach_config(tmp_path):
         [sys.executable, "-m", "aspire.run", "--task-dir", str(task),
          "--engine", "fake", "--fake-scores", "1.0,0.9",
          "--library", str(tmp_path / "lib"),
-         "--s-dbg", "0,1", "--s-val", "100-105", "--theta", "0.9"],
+         "--s-dbg", "0,1", "--s-val", "100-105", "--theta", "0.9",
+         "--admission-min-val", "0.0"],
         capture_output=True, text=True, cwd=REPO_ROOT)
     assert proc.returncode == 0, proc.stderr
     summary = json.loads(proc.stdout.strip().splitlines()[-1])
     assert summary["config"]["s_dbg"] == [0, 1]
     assert summary["config"]["s_val"] == [100, 101, 102, 103, 104, 105]
     assert summary["config"]["theta"] == 0.9
+    assert summary["config"]["admission_min_val"] == 0.0
 
 
 def test_cli_rejects_overlapping_seed_sets(tmp_path):

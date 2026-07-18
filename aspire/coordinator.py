@@ -237,6 +237,20 @@ class TaskPipeline:
 
         val = self.validate(program, dbg_score)             # Stage 2, exactly once
 
+        # Val-score gate on admission: a program that fails (or barely passes)
+        # held-out validation must not seed the shared library — skills learned
+        # from a near-failing run mislead later tasks. Two live campaigns admitted
+        # skills from val 0.0 (M3X) and val 0.10 (lift rep_5); this bars that.
+        # Placed before extraction so no actor tokens are spent producing skills
+        # that could not be admitted anyway. 0.0 disables the gate.
+        if val.score < self.cfg.admission_min_val:
+            _atomic_write(self.task_dir / "ADMISSION_GATED",
+                         json.dumps({"val_score": val.score,
+                                     "admission_min_val": self.cfg.admission_min_val}))
+            return TaskResult(stage_reached="validated", dbg_score=dbg_score,
+                              val_score=val.score, program=str(program),
+                              admitted_skills=(), blocked=blocked)
+
         # Algorithm 1 line 17 (ExtractValidatedPatterns): run the extraction actor
         # once per task whenever a repair happened (Stage-1 rounds and/or evosearch),
         # over the VALIDATED winner's evidence in winner/. Stage-1's own proposed

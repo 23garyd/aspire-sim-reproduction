@@ -171,6 +171,9 @@ def main(argv=None):
                     help="CSV/range seed spec overriding RunConfig.s_val, e.g. '100-119'")
     ap.add_argument("--theta", type=float, default=None,
                     help="override RunConfig.theta (early-stop score on debugging seeds)")
+    ap.add_argument("--admission-min-val", type=float, default=None,
+                    help="override RunConfig.admission_min_val (min held-out val score "
+                         "to admit skills; 0.0 disables the gate)")
     args = ap.parse_args(argv)
     if args.engine == "capx" and (not args.capx_cmd or not args.out_root):
         ap.error("--capx-cmd and --out-root are required for --engine capx")
@@ -185,6 +188,8 @@ def main(argv=None):
         ap.error(str(e))
     if args.theta is not None:
         overrides["theta"] = args.theta
+    if args.admission_min_val is not None:
+        overrides["admission_min_val"] = args.admission_min_val
     defaults = RunConfig().to_dict()
     resolved_s_dbg = overrides.get("s_dbg", defaults["s_dbg"])
     resolved_s_val = overrides.get("s_val", defaults["s_val"])
