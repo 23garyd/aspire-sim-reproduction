@@ -145,6 +145,29 @@ def test_cli_seed_overrides_reach_config(tmp_path):
     assert summary["config"]["admission_min_val"] == 0.0
 
 
+def test_cli_ablate_traces_and_t_reach_config(tmp_path):
+    task = tmp_path / "robosuite" / "lift"
+    task.mkdir(parents=True); (task / "code.py").write_text("pass")
+    proc = subprocess.run(
+        [sys.executable, "-m", "aspire.run", "--task-dir", str(task),
+         "--engine", "fake", "--fake-scores", "1.0,0.9",
+         "--library", str(tmp_path / "lib"),
+         "--ablate-traces", "--t", "0"],
+        capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 0, proc.stderr
+    summary = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert summary["config"]["ablate_traces"] is True
+    assert summary["config"]["t"] == 0
+
+
+def test_build_actors_uses_blind_prompt_when_ablated():
+    from aspire.run import _build_capx_actors
+    actor, _ = _build_capx_actors("prompts", ".", ablate_traces=True)
+    assert actor._prompt_file.endswith("actor_debug_blind.md")
+    actor2, _ = _build_capx_actors("prompts", ".", ablate_traces=False)
+    assert actor2._prompt_file.endswith("actor_debug.md")
+
+
 def test_cli_rejects_overlapping_seed_sets(tmp_path):
     task = tmp_path / "robosuite" / "lift"
     task.mkdir(parents=True); (task / "code.py").write_text("pass")

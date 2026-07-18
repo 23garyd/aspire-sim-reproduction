@@ -77,10 +77,12 @@ def _atomic_write_json(path: Path, obj) -> None:
     os.replace(tmp, path)
 
 
-def _build_capx_actors(prompts_dir: str, task_dir):
-    """Actor: debug prompt for run_debug, evosearch prompt for propose."""
+def _build_capx_actors(prompts_dir: str, task_dir, ablate_traces: bool = False):
+    """Actor: debug prompt for run_debug, evosearch prompt for propose.
+    Under ablate_traces the debug prompt is the trace-blind (reward-only) variant."""
+    debug_prompt = ("actor_debug_blind.md" if ablate_traces else "actor_debug.md")
     actor = ClaudeCodeActor(
-        prompt_file=f"{prompts_dir}/actor_debug.md",
+        prompt_file=f"{prompts_dir}/{debug_prompt}",
         propose_prompt_file=f"{prompts_dir}/actor_evosearch.md",
         extract_prompt_file=f"{prompts_dir}/extract_patterns.md")
     judge = ClaudeJudge(prompt_file=f"{prompts_dir}/coordinator_admission.md",
@@ -136,7 +138,8 @@ def _run_campaign(args, cfg: RunConfig, engine) -> int:
         if args.engine == "fake":
             actor, judge = FakeActor(), FakeJudge([])
         else:
-            actor, judge = _build_capx_actors(args.prompts, task_dir)
+            actor, judge = _build_capx_actors(args.prompts, task_dir,
+                                              ablate_traces=cfg.ablate_traces)
         pipe = TaskPipeline(task_dir, engine, actor, judge, library, cfg)
         try:
             pipe.run()
@@ -174,6 +177,11 @@ def main(argv=None):
     ap.add_argument("--admission-min-val", type=float, default=None,
                     help="override RunConfig.admission_min_val (min held-out val score "
                          "to admit skills; 0.0 disables the gate)")
+    ap.add_argument("--ablate-traces", action="store_true",
+                    help="repair actor sees a scalar reward instead of traces "
+                         "(trace-vs-retry ablation)")
+    ap.add_argument("--t", type=int, default=None,
+                    help="override RunConfig.t (evosearch max rounds; 0 disables evosearch)")
     args = ap.parse_args(argv)
     if args.engine == "capx" and (not args.capx_cmd or not args.out_root):
         ap.error("--capx-cmd and --out-root are required for --engine capx")
@@ -190,6 +198,10 @@ def main(argv=None):
         overrides["theta"] = args.theta
     if args.admission_min_val is not None:
         overrides["admission_min_val"] = args.admission_min_val
+    if args.t is not None:
+        overrides["t"] = args.t
+    if args.ablate_traces:
+        overrides["ablate_traces"] = True
     defaults = RunConfig().to_dict()
     resolved_s_dbg = overrides.get("s_dbg", defaults["s_dbg"])
     resolved_s_val = overrides.get("s_val", defaults["s_val"])
@@ -205,7 +217,8 @@ def main(argv=None):
     if args.engine == "fake":
         actor, judge = FakeActor(), FakeJudge([])
     else:
-        actor, judge = _build_capx_actors(args.prompts, args.task_dir)
+        actor, judge = _build_capx_actors(args.prompts, args.task_dir,
+                                          ablate_traces=cfg.ablate_traces)
 
     pipe = TaskPipeline(Path(args.task_dir), engine, actor, judge,
                         SkillLibrary(Path(args.library)), cfg)
