@@ -23,8 +23,14 @@ def summarize_traces(traces) -> str:
     return "\n".join(lines)
 
 
-def write_execution_context(task_dir, result) -> None:
+def write_execution_context(task_dir, result, ablate_traces: bool = False) -> None:
     task_dir = Path(task_dir)
+    if ablate_traces:
+        # Ablation: the repair actor sees ONLY the scalar reward, never per-primitive
+        # traces. Per-seed granularity is still reachable via scalar replay (replay.py
+        # prints the seed's score under the same ablation flag).
+        (task_dir / "outcome.txt").write_text(f"score: {result.score}\n")
+        return
     traces_dir = task_dir / "traces"
     media_dir = traces_dir / "media"
     media_dir.mkdir(parents=True, exist_ok=True)

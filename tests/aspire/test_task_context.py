@@ -98,3 +98,22 @@ def test_write_skills_context(tmp_path):
     assert "x-skill" in md and md.startswith("# Retrieved skills")
     write_skills_context(task, [])
     assert "(none)" in (task / "skills.md").read_text()
+
+
+def test_ablate_traces_writes_scalar_outcome_no_traces(tmp_path):
+    tr = TraceRecord(step=0, function="grasp", args={}, status="error",
+                     result_summary="PLANNING_ERROR", duration_ms=1.0, media=[])
+    result = ExecuteResult(0.3333333333333333, traces=[tr])
+    write_execution_context(tmp_path, result, ablate_traces=True)
+    assert (tmp_path / "outcome.txt").read_text().strip() == "score: 0.3333333333333333"
+    assert not (tmp_path / "traces").exists()          # no per-primitive leak
+    assert "PLANNING_ERROR" not in (tmp_path / "outcome.txt").read_text()
+
+
+def test_default_still_writes_full_traces(tmp_path):
+    tr = TraceRecord(step=0, function="grasp", args={}, status="error",
+                     result_summary="PLANNING_ERROR", duration_ms=1.0, media=[])
+    write_execution_context(tmp_path, ExecuteResult(0.0, traces=[tr]))
+    assert (tmp_path / "traces" / "trace.json").exists()
+    assert "PLANNING_ERROR" in (tmp_path / "traces" / "summary.txt").read_text()
+    assert not (tmp_path / "outcome.txt").exists()
