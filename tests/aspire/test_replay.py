@@ -136,6 +136,18 @@ def test_ablated_replay_prints_score_only(tmp_path, monkeypatch, capsys):
     assert not (attempt / "media").exists()
 
 
+def test_scrub_dir_removes_raw_output(tmp_path):
+    from aspire.replay import _scrub_dir
+    d = tmp_path / "exec_0001"
+    d.mkdir()
+    (d / "result.json").write_text("{}")
+    (d / "seed0_step0.png").write_bytes(b"x")
+    _scrub_dir(str(d))
+    assert not d.exists()          # trace data gone
+    _scrub_dir("")                 # empty -> no-op, no error
+    _scrub_dir(str(tmp_path / "missing"))   # nonexistent -> no-op, no error
+
+
 def test_replay_passes_absolute_program_path(tmp_path, monkeypatch):
     # F2 (R3 live finding): CapxEngine's runner chdirs to its own --workdir before
     # reading --program; a relative exec-copy path then resolves against the

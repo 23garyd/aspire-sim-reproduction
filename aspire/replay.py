@@ -31,6 +31,14 @@ from aspire.task_context import summarize_traces
 _USAGE = "usage: python3 -m aspire.replay <program.py> <seed>"
 
 
+def _scrub_dir(path_str: str) -> None:
+    """Remove an engine raw-output dir (result.json + keyframe PNGs). Used by the
+    ablated replay path so the trace data the actor is meant to be blind to does
+    not persist in the actor-readable sandbox after ./replay returns."""
+    if path_str and os.path.isdir(path_str):
+        shutil.rmtree(path_str, ignore_errors=True)
+
+
 def _atomic_write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -138,6 +146,10 @@ def main(argv=None) -> int:
 
     if ablate_traces:
         # Ablation: scalar feedback only — no per-primitive trace, summary, or media.
+        # The engine still wrote its full raw output (result.json + keyframe PNGs)
+        # under result.raw_dir inside this actor-readable sandbox; scrub it before
+        # returning so no trace data persists once ./replay hands control back.
+        _scrub_dir(result.raw_dir)
         print(f"score: {result.score}")
         return 0
 
