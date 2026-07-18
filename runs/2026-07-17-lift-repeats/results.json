@@ -1,25 +1,31 @@
 {
   "meta": {
     "date": "2026-07-17",
-    "campaign": "Lift campaign-repeats variance experiment (N=5 planned) on two_arm_lift",
+    "campaign": "Lift campaign-repeats variance experiment (N=5) on two_arm_lift",
     "spec": "docs/superpowers/specs/2026-07-17-lift-repeats-variance-design.md",
-    "status": "INCOMPLETE — halted after 2 valid repeats; Anthropic API credit balance exhausted",
+    "status": "COMPLETE — 5/5 repeats valid (ran across two sessions; reps 3-5 re-run fresh after an API-credit top-up)",
     "baseline": "M1 CaP-Agent0 trial_01 program (md5 0ada19ef), byte-identical to M3/M3X baseline",
     "config": "s_dbg [0,1,2], s_val 100-119 (n=20), theta 1.0, debug_rounds 2, model_repair opus, model_propose sonnet — identical to M3X",
-    "isolation": "each repeat: fresh task dir + fresh EMPTY skill library + own exec root"
+    "isolation": "each repeat: fresh task dir + fresh EMPTY skill library + own exec root; reps mutually independent (i.i.d.)"
   },
   "repeats": {
-    "rep_1": {"valid": true, "stage_reached": "validated", "dbg_score": 1.0, "val_score": 1.0, "mechanism": "Stage-1 trace-guided repair, dbg 1.0 (no evosearch)", "admitted": ["orient_top_down_grasp_to_object_inplane_axis", "top_down_grasp_aligned_to_object_axis"]},
-    "rep_2": {"valid": true, "stage_reached": "validated", "dbg_score": 1.0, "val_score": 0.95, "mechanism": "Stage-1 trace-guided repair, dbg 1.0 (no evosearch)", "admitted": ["top_down_grasp_aligned_to_perceived_axis", "nearest_feature_arm_assignment", "nearest_handle_arm_assignment"]},
-    "rep_3": {"valid": false, "reason": "INFRA: claude -p actor exited 1 mid-run (credit balance too low); coordinator aborted exit 2. NOT an experiment failure. Partial debug report present (outcome fail). Re-run fresh after credits restored."},
-    "rep_4": {"valid": false, "reason": "INFRA: claude -p actor exited 1 immediately (credit balance too low). Re-run fresh."},
-    "rep_5": {"valid": false, "reason": "INFRA: killed while starting — credits already exhausted; would have failed identically. Re-run fresh."}
+    "rep_1": {"stage_reached": "validated", "dbg_score": 1.0, "val": "20/20 (1.00)", "mechanism": "Stage-1 trace-guided repair (seed_attempts 2,1,1); no evosearch", "admitted": ["orient_top_down_grasp_to_object_inplane_axis", "top_down_grasp_aligned_to_object_axis"]},
+    "rep_2": {"stage_reached": "validated", "dbg_score": 1.0, "val": "19/20 (0.95)", "mechanism": "Stage-1 trace-guided repair (2,1,1); no evosearch", "admitted": ["top_down_grasp_aligned_to_perceived_axis", "nearest_feature_arm_assignment", "nearest_handle_arm_assignment"]},
+    "rep_3": {"stage_reached": "validated", "dbg_score": 1.0, "val": "16/20 (0.80)", "mechanism": "evosearch rescue — winner from run_001/iter_00/candidate_A, dbg 1.0 (Stage-1 did not reach theta)", "admitted": ["fixed-value-over-unreliable-perception-channel"]},
+    "rep_4": {"stage_reached": "validated", "dbg_score": 1.0, "val": "17/20 (0.85)", "mechanism": "Stage-1 trace-guided repair with retries (seed_attempts 3,3,2); no evosearch", "admitted": ["geometry_derived_grasp_orientation", "align_close_axis_and_depth_to_solid_purchase"]},
+    "rep_5": {"stage_reached": "validated", "dbg_score": 0.667, "val": "2/20 (0.10)", "mechanism": "NEAR-FAILURE — Stage-1 failed (outcome fail); evosearch ran 5 rounds, best was run_001/iter_04/candidate_B at dbg 0.667 (never reached theta); that partial winner validated 2/20", "admitted": ["retry-blocked-branch-via-new-approach-vector", "escape-grasp-plateau-by-changing-interaction-primitive", "instrument-achieved-pose-inline", "override-unreliable-observation-field"], "note": "4 skills admitted from a val-0.10 run — reinforces the val-score-gate-on-admission backlog item (M3X had the same issue at val 0.0)"}
   },
-  "valid_data_points_so_far": {
-    "lift_repair_successes": "2/2 valid campaign repeats reached validated success (1.0, 0.95), both via Stage-1 trace-guided repair, no evosearch",
-    "with_history": "pilot=success(5/5), M3X=fail(0/20), rep_1=success(20/20), rep_2=success(19/20) => 3 successes / 1 failure across 4 clean campaign runs",
-    "provisional_read": "Lift repair appears predominantly successful; M3X 0/20 looks like the minority/tail outcome, NOT the representative one. NOT yet conclusive — needs reps 3-5 (and ideally the planned N=5, extendable to N=10) once API credits are restored.",
-    "note": "reps 3-5 are INFRA failures (out of credits), NOT lift-repair failures, and must not be counted against the success rate."
+  "finding": {
+    "campaign_val_scores": {"rep_1": 1.0, "rep_2": 0.95, "rep_3": 0.80, "rep_4": 0.85, "rep_5": 0.10},
+    "with_history": {"m3_pilot": 1.0, "m3x": 0.0, "rep_1": 1.0, "rep_2": 0.95, "rep_3": 0.80, "rep_4": 0.85, "rep_5": 0.10},
+    "n_runs": 7,
+    "mean_val": 0.671,
+    "verdict": "two_arm_lift repair is genuinely HIGH-VARIANCE but NOT bimodal all-or-nothing. Across 7 independent campaign runs the held-out validation score spans the full range (0.0, 0.10, 0.80, 0.85, 0.95, 1.0, 1.0). 5/7 runs land a strong program (val >= 0.80); 2/7 land in the weak tail (val <= 0.10). The M3X 0/20 was NOT a fluke or a bug — it is the extreme end of a real, continuous variance distribution, and rep_5 (0.10) independently confirms the weak tail recurs (~2/7 ~= 29% of runs).",
+    "mechanism_split": "Stage-1 trace-guided repair alone solved 3/5 repeats (rep 1,2,4, all val >= 0.85). Evosearch was the winner in the 2 harder repeats: it rescued rep_3 to a strong 0.80, but on rep_5 it plateaued at dbg 0.667 and the resulting program was weak (0.10). Evosearch reduces but does not eliminate the weak tail.",
+    "answers_handoff_question": "Which run was representative — pilot (5/5) or M3X (0/20)? ANSWER: neither extreme is 'the truth'. The representative outcome is a strong-but-imperfect program (median val ~0.85); both extremes are tails of one high-variance distribution."
   },
-  "blocker": "Anthropic API account credit balance exhausted (`claude -p` returns 'Credit balance is too low'). Top up billing, then: rm -rf ~/aspire_runs/lift_repeats/rep_3 rep_4 rep_5 && bash ~/start_lift_repeats.sh (reps 1,2 have VALIDATION_DONE and are skipped; 3,4,5 re-run fresh)."
+  "artifacts": {
+    "per_repeat_state": "~/aspire_runs/lift_repeats/rep_1..rep_5/ (winner/, findings.md, traces/, VALIDATION_DONE)",
+    "logs": "~/aspire_runs/lift_repeats/campaign.log (resumed run, reps 3-5) + campaign.log.part1-2 (reps 1-2)"
+  }
 }
