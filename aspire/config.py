@@ -17,6 +17,11 @@ class RunConfig:
                                     # >= this. 0.0 disables the gate. Keeps skills
                                     # learned from near-failing runs (e.g. val 0.0/0.1)
                                     # out of the shared library.
+    ablate_traces: bool = False   # [RECONSTRUCTED] ablation: when True the repair
+                                  # actor sees a scalar reward (outcome.txt / scalar
+                                  # replay) instead of per-primitive traces. Used to
+                                  # test whether traces are causal. Does NOT change
+                                  # engine-internal traces, winner/ bundles, or extraction.
     s_dbg: list = field(default_factory=lambda: [0, 1, 2])
     s_val: list = field(default_factory=lambda: [100, 101, 102, 103, 104])
     model_repair: str = "opus"    # diagnosis/repair/skill synthesis

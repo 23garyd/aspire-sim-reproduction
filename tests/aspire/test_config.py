@@ -14,3 +14,10 @@ def test_defaults_match_spec_reconstructed_values():
 def test_to_dict_round_trip():
     cfg = RunConfig(k=5, s_dbg=[1, 2], s_val=[9])
     assert RunConfig(**cfg.to_dict()) == cfg
+
+
+def test_ablate_traces_defaults_false_and_is_logged():
+    cfg = RunConfig()
+    assert cfg.ablate_traces is False
+    assert cfg.to_dict()["ablate_traces"] is False
+    assert RunConfig(ablate_traces=True).ablate_traces is True
