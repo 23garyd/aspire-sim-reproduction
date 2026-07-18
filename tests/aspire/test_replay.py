@@ -118,6 +118,24 @@ def test_replay_crash_consumed_attempt(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "replays" / "attempts.json").read_text()) == {"0": 1}
 
 
+def test_ablated_replay_prints_score_only(tmp_path, monkeypatch, capsys):
+    # Same fake-engine recipe shape as _setup(), plus ablate_traces=True.
+    (tmp_path / "replay.json").write_text(json.dumps(
+        {"engine": {"type": "fake", "scores": [1.0]},
+         "s_dbg": [0], "max_attempts_per_seed": 3,
+         "ablate_traces": True}))
+    (tmp_path / "fix.py").write_text("navigate_to_pose([1,2,0])")
+    monkeypatch.chdir(tmp_path)
+    rc = replay.main(["fix.py", "0"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.strip() == "score: 1.0"
+    attempt = tmp_path / "replays" / "seed0_attempt1"
+    assert not (attempt / "trace.json").exists()
+    assert not (attempt / "summary.txt").exists()
+    assert not (attempt / "media").exists()
+
+
 def test_replay_passes_absolute_program_path(tmp_path, monkeypatch):
     # F2 (R3 live finding): CapxEngine's runner chdirs to its own --workdir before
     # reading --program; a relative exec-copy path then resolves against the

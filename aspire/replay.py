@@ -72,6 +72,7 @@ def main(argv=None) -> int:
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         print(f"malformed replay.json: {e}", file=sys.stderr)
         return 2
+    ablate_traces = bool(recipe.get("ablate_traces", False))
 
     s_dbg = recipe.get("s_dbg", [])
     if seed not in s_dbg:
@@ -134,6 +135,11 @@ def main(argv=None) -> int:
     except EngineError as e:
         print(str(e), file=sys.stderr)
         return 5
+
+    if ablate_traces:
+        # Ablation: scalar feedback only — no per-primitive trace, summary, or media.
+        print(f"score: {result.score}")
+        return 0
 
     media_dir = out / "media"
     media_dir.mkdir(parents=True, exist_ok=True)
