@@ -52,3 +52,18 @@ def test_extract_prompt_exists_with_contract():
     assert "winner/trace.json" in text or "winner/" in text
     assert ">=2 task types" in text
     assert "env.handle.env.sim" in text
+
+
+def test_blind_debug_prompt_is_trace_free_but_keeps_contract():
+    text = Path("prompts/actor_debug_blind.md").read_text()
+    low = text.lower()
+    # keeps the output contract
+    assert "fix_code.py" in text
+    assert "report.json" in text
+    # references the scalar surface, not the trace surface
+    assert "outcome.txt" in text
+    assert "traces/" not in text
+    assert "summary.txt" not in text
+    assert "keyframe" not in low and "trace.json" not in low
+    # still allows the (scalar) replay affordance
+    assert "./replay" in text
