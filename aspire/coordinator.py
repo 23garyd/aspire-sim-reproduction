@@ -69,7 +69,8 @@ class TaskPipeline:
             recipe = dict(recipe, out_root=str(self.task_dir / "replays" / "engine"))
         _atomic_write(self.task_dir / "replay.json", json.dumps(
             {"engine": recipe, "s_dbg": list(self.cfg.s_dbg),
-             "max_attempts_per_seed": self.cfg.max_seed_attempts}, indent=1))
+             "max_attempts_per_seed": self.cfg.max_seed_attempts,
+             "ablate_traces": self.cfg.ablate_traces}, indent=1))
         # Task dirs live OUTSIDE the repo (e.g. ~/aspire_runs/...); a bare
         # `python3 -m aspire.replay` there raises ModuleNotFoundError because the
         # `aspire` package is only importable from the repo root. Point PYTHONPATH
@@ -167,7 +168,8 @@ class TaskPipeline:
         # even evosearch) may overwrite the same on-disk path (fix_code.py) in place,
         # so the bytes describing the CURRENT winner must be pinned the moment it wins.
         winning_bytes = baseline.read_bytes()
-        write_execution_context(self.task_dir, r)
+        write_execution_context(self.task_dir, r,
+                                ablate_traces=self.cfg.ablate_traces)
         write_task_metadata(self.task_dir, task_language=self.task_language)
 
         blocked = False
@@ -191,10 +193,11 @@ class TaskPipeline:
                     break
                 if dbg_score >= self.cfg.theta:
                     break
-                write_execution_context(self.task_dir, r)   # refresh for next round
+                write_execution_context(self.task_dir, r,   # refresh for next round
+                                        ablate_traces=self.cfg.ablate_traces)
 
         evosearch_ran = False
-        if dbg_score < self.cfg.theta:                      # evosearch fallback
+        if self.cfg.t > 0 and dbg_score < self.cfg.theta:   # evosearch fallback
             evosearch_ran = True
             best = evosearch(self.task_dir, self.engine, self.actor, self.cfg,
                              skills=relevant_skills(self.library, latest.traces))

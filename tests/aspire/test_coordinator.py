@@ -759,3 +759,37 @@ def test_materialized_shim_guards_empty_pythonpath(tmp_path):
     pipe._materialize_replay()
     body = (task / "replay").read_text()
     assert "${PYTHONPATH:+:$PYTHONPATH}" in body
+
+
+def test_t_zero_disables_evosearch(tmp_path):
+    # dbg never reaches theta; with t=0 evosearch must NOT run — the debug-best
+    # program goes straight to validation. FakeEngine scripts exactly: S0, one
+    # failing fix, then S_val. A 4th engine call (evo) would raise (list exhausted).
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=0, theta=1.0, debug_rounds=1, s_dbg=[0, 1],
+                    s_val=[100, 101])
+    engine = FakeEngine([ExecuteResult(0.0),   # Stage 0
+                         ExecuteResult(0.5),   # fix, still < theta
+                         ExecuteResult(0.9)])  # Stage 2 (proves no evosearch calls between)
+    (task / "fix_code.py").write_text("still_bad()")
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    result = TaskPipeline(task, engine, actor, FakeJudge([True, True]), lib, cfg).run()
+    assert result.val_score == 0.9
+    assert not (task / "evosearch_best_score.json").exists()
+
+def test_ablate_traces_writes_scalar_context_and_replay_flag(tmp_path):
+    task = _task(tmp_path)
+    cfg = RunConfig(k=2, t=0, theta=1.0, debug_rounds=1, s_dbg=[0, 1],
+                    s_val=[100, 101], ablate_traces=True)
+    engine = FakeEngine([ExecuteResult(0.0), ExecuteResult(0.9), ExecuteResult(0.9)])
+    (task / "fix_code.py").write_text("clean_fix()")
+    actor = FakeActor(reports=[_skillful_report()],
+                      extraction_reports=[_extraction_report()])
+    lib = SkillLibrary(tmp_path / "lib")
+    TaskPipeline(task, engine, actor, FakeJudge([True, True]), lib, cfg).run()
+    assert (task / "outcome.txt").exists()
+    assert not (task / "traces").exists()
+    replay_recipe = json.loads((task / "replay.json").read_text())
+    assert replay_recipe["ablate_traces"] is True
