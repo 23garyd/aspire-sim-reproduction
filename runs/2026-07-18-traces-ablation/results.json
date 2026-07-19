@@ -1,37 +1,33 @@
 {
   "meta": {
-    "date": "2026-07-18",
-    "experiment": "Traces-vs-retry ablation (stage 1: N=5/arm signal check) on two_arm_lift",
+    "date": "2026-07-18/19",
+    "experiment": "Traces-vs-retry ablation on two_arm_lift — FINAL (N=8/arm, staged 5 then +3)",
     "spec": "docs/superpowers/specs/2026-07-17-traces-vs-retry-ablation-design.md",
     "question": "Do ASPIRE's per-primitive multimodal traces causally improve repair over a plain reward-driven retry with matched compute?",
-    "design": "Two arms, single manipulated variable = trace access. T = traces (ablate_traces=false); C = scalar reward only (ablate_traces=true). Both: opus repair, s_dbg [0,1,2], s_val 100-119 (held-out), theta 1.0, debug_rounds 2, evosearch OFF (t=0), empty per-repeat library, pristine baseline md5 0ada19ef. Isolated dirs per repeat.",
-    "integrity": "Control-arm trace-leak (capx replay raw dir inside actor sandbox) was closed before the run (commit 640a80b). Config logged per run confirms ablate_traces true/false per arm and t=0 both arms.",
-    "run_status": "COMPLETE, clean — 10/10 runs, no credit failures, no crashes, no tainted runs."
+    "design": "Two arms, single manipulated variable = trace access. T = traces (ablate_traces=false); C = scalar reward only (ablate_traces=true). Both: opus repair, s_dbg [0,1,2], s_val 100-119 (held-out), theta 1.0, debug_rounds 2, evosearch OFF (t=0), empty per-repeat library, pristine baseline md5 0ada19ef, isolated dirs.",
+    "run_status": "COMPLETE, clean — 16/16 runs across both stages, no credit failures, no crashes, no tainted runs. Control-arm trace-leak closed pre-run (commit 640a80b)."
   },
-  "arms": {
-    "T_traces":  {"scores": [0.05, 0.30, 0.90, 0.90, 1.00], "n": 5, "mean": 0.630, "median": 0.900, "P_val_ge_0.80": 0.60},
-    "C_retry":   {"scores": [0.00, 0.05, 0.20, 0.60, 1.00], "n": 5, "mean": 0.370, "median": 0.200, "P_val_ge_0.80": 0.20}
+  "arms_n8": {
+    "T_traces": {"scores": [0.05, 0.15, 0.30, 0.80, 0.90, 0.90, 0.95, 1.00], "n": 8, "mean": 0.631, "median": 0.850, "P_val_ge_0.80": 0.62},
+    "C_retry":  {"scores": [0.00, 0.05, 0.10, 0.20, 0.35, 0.60, 1.00, 1.00], "n": 8, "mean": 0.412, "median": 0.275, "P_val_ge_0.80": 0.25}
   },
   "per_repeat": {
-    "T": {"rep_1": 0.90, "rep_2": 0.05, "rep_3": 1.00, "rep_4": 0.30, "rep_5": 0.90},
-    "C": {"rep_1": 1.00, "rep_2": 0.00, "rep_3": 0.60, "rep_4": 0.20, "rep_5": 0.05}
+    "T": {"rep_1": 0.90, "rep_2": 0.05, "rep_3": 1.00, "rep_4": 0.30, "rep_5": 0.90, "rep_6": 0.15, "rep_7": 0.80, "rep_8": 0.95},
+    "C": {"rep_1": 1.00, "rep_2": 0.00, "rep_3": 0.60, "rep_4": 0.20, "rep_5": 0.05, "rep_6": 0.10, "rep_7": 0.35, "rep_8": 1.00}
   },
-  "test": {
-    "statistic": "Mann-Whitney U (T vs C), one-sided, tie-corrected normal approx",
-    "U_T_vs_C": 17.0,
-    "U_max": 25,
-    "U_null_mean": 12.5,
-    "z": 0.949,
-    "approx_one_sided_p": 0.17
+  "primary_test_mann_whitney": {
+    "n5":  {"U_T_vs_C": 17.0, "U_max": 25, "z": 0.949, "approx_one_sided_p": 0.17},
+    "n8":  {"U_T_vs_C": 39.5, "U_max": 64, "z": 0.791, "approx_one_sided_p": 0.21}
   },
   "verdict": {
-    "direction": "Every summary statistic favors traces: mean 0.63 vs 0.37 (+0.26), median 0.90 vs 0.20 (+0.70), P(val>=0.80) 0.60 vs 0.20 (3x).",
-    "significance": "NOT significant at N=5 (z=0.949, one-sided p~0.17). The effect direction is consistent and the effect size is moderate-to-large, but N=5 against this variance cannot reject H0.",
-    "pre_registered_read": "This is the pre-committed 'ambiguous / underpowered' outcome. Per the spec: do NOT read a null; extend to N=8/arm (then N=16 if still ambiguous). The signal is promising (traces ahead on all three metrics) but not yet a reportable result.",
-    "recommended_next": "Extend to N=8/arm (3 more repeats per arm = 6 runs; done repeats are skipped on re-run). Re-run: N=8 bash ~/start_traces_ablation.sh, then re-run scripts/analyze_ablation.py."
+    "direction": "Traces lead on EVERY pre-registered summary statistic at both N=5 and N=8: mean 0.63 vs 0.41 (+0.22), median 0.85 vs 0.275 (+0.58), P(val>=0.80) 0.62 vs 0.25 (2.5x). The 'produces a strong program' rate is the most stable signal (0.60->0.62 for T, 0.20->0.25 for C across stages).",
+    "significance": "The primary Mann-Whitney test is NOT significant (N=8: z=0.79, one-sided p~0.21) and did NOT strengthen with N (z fell 0.95->0.79). Both arms occasionally hit 1.0 and often ~0 — variance dominates, so a rank test on raw held-out scores cannot separate the arms at this scale.",
+    "power_note": "Because z is flat ~0.8 as N doubled, reaching p<0.05 by Mann-Whitney would need very large N (~30-35/arm, ~60-70 runs) with no guarantee. Brute-force N is a poor use of credits here.",
+    "honest_conclusion": "SUGGESTIVE, NOT CONCLUSIVE. Traces show a consistent ~2.5x advantage in producing a strong (val>=0.80) program, but the effect is within the noise of the pre-registered rank test at N<=8. We do NOT claim traces are proven causal, and we do NOT claim a null. Reporting effect sizes + the non-significant test honestly, per pre-registration.",
+    "recommended_next": "Do NOT chase Mann-Whitney significance by brute N. If a hard result is needed, redesign for power (paired seeds to cancel task variance; or a lower-variance task; or treat 'strong program' as a binary outcome with a targeted proportion test declared in advance). Otherwise the effect-size finding stands as the reportable result."
   },
-  "notes": {
-    "val_score_gate_validated_live": "The admission gate (commit f306e65) fired correctly in the wild: every repeat with val < 0.5 (T rep_2 0.05, T rep_4 0.30; C rep_2 0.0, C rep_4 0.20, C rep_5 0.05) admitted ZERO skills; only val>=0.5 repeats admitted skills.",
-    "evosearch_off_confirmed": "t=0 in every logged config; no evosearch_best_* artifacts; winners are Stage-1 debug programs (dbg often < theta, e.g. 0.33/0.67, validated directly)."
+  "side_findings": {
+    "val_score_gate_validated_live": "Admission gate (f306e65) behaved correctly across all 16 runs: every repeat with val<0.5 admitted ZERO skills; only val>=0.5 repeats admitted skills.",
+    "evosearch_off_confirmed": "t=0 in every logged config; no evosearch_best_* artifacts; winners are Stage-1 debug programs validated directly."
   }
 }
