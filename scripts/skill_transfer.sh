@@ -21,7 +21,7 @@ mkdir -p "$ROOT"
 
 run_arm() {           # $1 = arm label (S|E), $2 = seed dir ("" = empty library)
   local arm="$1" seed="$2"
-  for i in $(seq -w 1 "$N"); do
+  for i in $(seq -f "%02g" 1 "$N"); do
     local rep="$ROOT/$arm/rep_$i" task="$ROOT/$arm/rep_$i/robosuite/two_arm_lift"
     echo "=== SKILL-TRANSFER arm=$arm rep=$i/$N $(date -u +%FT%TZ) ==="
     if [ -f "$task/VALIDATION_DONE" ]; then echo "=== $arm/rep_$i done, skip ==="; continue; fi
