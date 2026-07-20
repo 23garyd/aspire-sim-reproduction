@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "date": "2026-07-19/20",
+    "experiment": "Skill-transfer test (stage 1: N=5/arm) on two_arm_lift — validate ASPIRE layer 2",
+    "spec": "docs/superpowers/specs/2026-07-19-skill-transfer-test-design.md",
+    "question": "Does seeding a lift run's library with HANDOVER-provenance skills beat an empty library? (i.e. do learned skills transfer across tasks?)",
+    "design": "Two arms, single manipulated variable = library contents. S = seeded with 2 handover-provenance skills (lift-provenance excluded); E = empty. Both: opus repair, s_dbg [0,1,2], s_val 100-119 held-out, theta 1.0, debug_rounds 2, evosearch OFF (t=0), pristine baseline md5 0ada19ef, isolated dirs.",
+    "run_status": "COMPLETE, clean — 10/10 runs, no credit/crash failures, no tainted runs."
+  },
+  "mechanism_verified_live": {
+    "arm_S_skills_injected": "All 5 S reps: skills.md contained BOTH handover skills (allocate-shared-object-span-between-two-effectors, keyframe-geometry-from-trace-images). The seed reached the repair actor every time.",
+    "arm_E_empty": "E rep skills.md = (none). Confirmed.",
+    "conclusion": "This is a genuine result, not an inert run — the transfer channel fired; the skills simply did not help."
+  },
+  "arms": {
+    "S_seeded": {"scores": [0.0, 0.25, 0.35, 0.70, 0.90], "n": 5, "mean": 0.440, "median": 0.350, "P_val_ge_0.80": 0.20},
+    "E_empty":  {"scores": [0.0, 0.50, 0.75, 0.90, 1.00], "n": 5, "mean": 0.630, "median": 0.750, "P_val_ge_0.80": 0.40}
+  },
+  "per_repeat": {
+    "S": {"rep_01": 0.0, "rep_02": 0.70, "rep_03": 0.35, "rep_04": 0.25, "rep_05": 0.90},
+    "E": {"rep_01": 0.75, "rep_02": 1.00, "rep_03": 0.0, "rep_04": 0.90, "rep_05": 0.50}
+  },
+  "test": {
+    "statistic": "Mann-Whitney U (S vs E), one-sided, tie-corrected normal approx",
+    "U_S_vs_E": 8.0,
+    "U_max": 25,
+    "U_null_mean": 12.5,
+    "z": -0.946,
+    "note": "z<0 => the SEEDED arm ranks LOWER. One-sided p for S>E is ~0.83 (direction is against the hypothesis). One-sided p for the observed E>S direction is ~0.17 — also not significant."
+  },
+  "verdict": {
+    "headline": "NO evidence that seeding handover-provenance skills improves lift repair. Every summary statistic favors the EMPTY arm: mean 0.44 (S) vs 0.63 (E), median 0.35 vs 0.75, P(val>=0.80) 0.20 vs 0.40. The point estimate is a (non-significant) NEGATIVE transfer.",
+    "significance": "Not significant either way (U=8, z=-0.946; |z| p~0.17) — same high-variance regime as the ablation. We reject H1 (skills help) in direction and cannot claim a benefit; we also cannot claim a significant harm.",
+    "honest_conclusion": "On this task pair, ASPIRE's skill layer does NOT demonstrably transfer — a legitimate, important negative for layer 2. The transfer mechanism fired (skills reached the actor in all 5 S reps), so this is not a plumbing failure.",
+    "plausible_explanation": "Both arms independently ADMITTED grasp-orientation skills during their own runs (S and E winners both discovered perception-aligned/yaw-aligned top-down grasps). The repair actor re-derives the needed geometry from THIS run's traces regardless of the seed, so pre-seeded cross-task skills add little the actor could not already obtain. Consistent with the traces-ablation finding that traces carry most of the repair signal."
+  },
+  "recommended_next": {
+    "primary": "Do NOT chase significance by brute N (same variance wall as the ablation; a negative/null point estimate is unlikely to flip to a positive significant result). Report this honest negative.",
+    "if_pursued": "A fairer positive-control would seed the strongest lift-relevant skill and pick a target task whose baseline the actor CANNOT solve from its own traces (so the skill supplies genuinely missing info). Also: paired seeds to cut variance. Both are redesigns, not more N.",
+    "narrative": "Combined with the ablation (traces suggestive, ~2.5x strong-program rate) and this null on skill transfer, the emerging picture: the repair loop's power lives in per-run trace-guided repair, not (yet demonstrably) in cross-task skill accumulation."
+  }
+}
