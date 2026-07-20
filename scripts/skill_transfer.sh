@@ -10,7 +10,7 @@ REPO="$PWD"
 
 N=${N:-8}
 ROOT=${ROOT:-$HOME/aspire_runs/skill_transfer}
-SEED="$REPO/runs/2026-07-19-skill-transfer/seed_library"
+SEED="${SEED:-$REPO/runs/2026-07-19-skill-transfer/seed_library}"
 BASELINE=$HOME/aspire_runs/m1_baseline/claude-opus-4-8/two_arm_lift/trial_01_sandboxrc_0_reward_0.026_taskcompleted_0/code.py
 CFG=/home/demo/cap-x/env_configs/two_arm_lift/franka_robosuite_two_arm_lift_privileged.yaml
 CAPX_CMD="/home/demo/cap-x/.venv/bin/python $REPO/scripts/capx_execute.py --workdir /home/demo/cap-x --config-path $CFG"
