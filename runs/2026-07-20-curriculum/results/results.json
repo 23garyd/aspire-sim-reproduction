@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "date": "2026-07-20",
+    "experiment": "Curriculum-accumulation (ASPIRE layer 2 as intended), N=5/arm on two_arm_lift",
+    "spec": "docs/superpowers/specs/2026-07-20-curriculum-accumulation-design.md",
+    "question": "Does a library ACCUMULATED by running the 4 non-lift tasks in sequence improve held-out lift repair (warm) vs an empty library (cold)?",
+    "design": "Phase 1: run cube_lifting -> cube_stack -> nut_assembly -> two_arm_handover as single-task runs sharing ONE library (skills accumulate). Phase 2: warm (S = accumulated library) vs cold (E = empty) on two_arm_lift, N=5, s_val 100-119 held-out, t=0, pristine baseline. Lift excluded from accumulation (no self-leakage).",
+    "run_status": "COMPLETE, clean — Phase 1 (4 tasks) + Phase 2 (10 lift runs), no credit/crash failures."
+  },
+  "phase1_accumulation": {
+    "per_task_admitted": {"cube_lifting": [], "cube_stack": [], "nut_assembly": ["seat-at-resting-height-not-target-center"], "two_arm_handover": []},
+    "accumulated_library": ["seat-at-resting-height-not-target-center"],
+    "n_skills": 1,
+    "note": "The 3 easy tasks pass at baseline (no repair -> no skills). Handover repaired (val 0.95) but admitted nothing this run. Only nut_assembly contributed — a SINGLE, nut-assembly-specific placement-height skill, NOT lift-relevant. This is the design-anticipated thin/degenerate case, and it is the key caveat on the result below."
+  },
+  "phase2_arms": {
+    "S_warm": {"scores": [0.0, 0.0, 0.10, 0.85, 0.90], "n": 5, "mean": 0.370, "median": 0.100, "P_val_ge_0.80": 0.40},
+    "E_cold": {"scores": [0.45, 0.85, 0.85, 1.00, 1.00], "n": 5, "mean": 0.830, "median": 0.850, "P_val_ge_0.80": 0.80}
+  },
+  "per_repeat": {
+    "S": {"rep_01": 0.90, "rep_02": 0.85, "rep_03": 0.0, "rep_04": 0.10, "rep_05": 0.0},
+    "E": {"rep_01": 1.00, "rep_02": 0.85, "rep_03": 0.85, "rep_04": 0.45, "rep_05": 1.00}
+  },
+  "mechanism_verified_live": {
+    "warm_injected": "All 5 warm (S) reps' skills.md contained the accumulated skill 'seat-at-resting-height-not-target-center'.",
+    "cold_empty": "All cold (E) reps' skills.md = (none).",
+    "conclusion": "Valid test — the accumulated library genuinely reached the warm repair actor."
+  },
+  "test": {
+    "statistic": "Mann-Whitney U (S=warm vs E=cold), tie-corrected normal approx",
+    "U_S_vs_E": 5.0,
+    "U_max": 25,
+    "U_null_mean": 12.5,
+    "z": -1.596,
+    "approx_one_sided_p_for_cold_gt_warm": 0.055
+  },
+  "verdict": {
+    "headline": "The curriculum-accumulated library did NOT help lift — the WARM arm scored substantially LOWER than cold on every metric: mean 0.37 vs 0.83, median 0.10 vs 0.85, P(val>=0.80) 0.40 vs 0.80. Cold-beats-warm is borderline significant (z=-1.596, one-sided p~0.055).",
+    "critical_caveat": "This is NOT a clean test of a good curriculum library. Faithful accumulation on OUR suite yielded only 1 skill, and it is a nut-assembly placement-height skill with no lift relevance. So the warm arm was seeded with a single irrelevant prior. The negative (and the apparent mild harm) is confounded by the thinness + irrelevance of what accumulated — the suite could not produce a rich, lift-relevant curriculum library to test with.",
+    "honest_conclusion": "No evidence ASPIRE's curriculum accumulation helps lift on this suite; if anything a single irrelevant seeded skill coincided with worse warm runs (borderline). Consistent with the hand-seeded skill-transfer null. Layer 2's value remains UNPROVEN — and this suite (3 easy pass-tasks + 2 hard bimanual, whose skills didn't transfer) cannot give it a fair test.",
+    "why_it_matters": "The reproduction now has a coherent, honest layer-2 story: cross-task skill accumulation showed no benefit in two independent designs (hand-seeded transfer + faithful curriculum). The demonstrated ASPIRE value on these tasks is per-run trace-guided repair, not skill accumulation."
+  },
+  "recommended_next": {
+    "for_layer2": "A fair layer-2 test needs a curriculum that actually accumulates MULTIPLE lift-relevant skills — i.e. more failing-but-solvable tasks that share structure with the target. Our 5-task suite lacks this. Options: add more bimanual failing tasks (M4/LIBERO), or a positive control that seeds a known-relevant multi-skill library.",
+    "do_not": "Do not brute-force N here — the limiting factor is library richness, not sample size."
+  }
+}
