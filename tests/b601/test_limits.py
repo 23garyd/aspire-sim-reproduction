@@ -1,3 +1,5 @@
+import pytest
+
 from robot_b601.limits import JointLimits, DEFAULT_LIMITS, clamp_to_limits, load_limits
 
 def test_in_range_unchanged():
@@ -25,3 +27,27 @@ def test_load_from_json(tmp_path):
     p.write_text('{"lo": [-1,-1,-1,-1,-1,-1], "hi": [1,1,1,1,1,1]}')
     lim = load_limits(str(p))
     assert lim.lo == [-1.0]*6 and lim.hi == [1.0]*6
+
+def test_load_wrong_length_raises(tmp_path):
+    p = tmp_path / "bad_len.json"
+    p.write_text('{"lo": [-1,-1,-1], "hi": [1,1,1]}')
+    with pytest.raises(ValueError):
+        load_limits(str(p))
+
+def test_load_inverted_raises(tmp_path):
+    p = tmp_path / "bad_inverted.json"
+    p.write_text('{"lo": [-1,-1,-1,-1,-1, 2], "hi": [1,1,1,1,1,-2]}')
+    with pytest.raises(ValueError):
+        load_limits(str(p))
+
+def test_clamp_length_mismatch_raises():
+    lim = JointLimits(lo=[-1.0]*6, hi=[1.0]*6)
+    with pytest.raises(ValueError):
+        clamp_to_limits([0.5, -0.5, 0.0], lim)
+
+def test_clamp_boundary_exact_unchanged():
+    lim = JointLimits(lo=[-1.0]*6, hi=[1.0]*6)
+    joints = [lim.lo[0], lim.hi[1], 0.0, lim.lo[3], lim.hi[4], 0.5]
+    c, was = clamp_to_limits(joints, lim)
+    assert c == joints
+    assert was is False

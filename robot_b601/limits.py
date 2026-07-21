@@ -21,6 +21,8 @@ DEFAULT_LIMITS = JointLimits(lo=[-2.6] * 6, hi=[2.6] * 6)
 
 
 def clamp_to_limits(joints, limits: JointLimits):
+    if not (len(joints) == len(limits.lo) == len(limits.hi)):
+        raise ValueError("clamp_to_limits length mismatch")
     clamped = []
     was_clamped = False
     for j, lo, hi in zip(joints, limits.lo, limits.hi):
@@ -35,5 +37,11 @@ def load_limits(path=None) -> JointLimits:
     if path is None or not os.path.exists(path):
         return DEFAULT_LIMITS
     d = json.loads(Path(path).read_text())
-    return JointLimits(lo=[float(x) for x in d["lo"]],
-                       hi=[float(x) for x in d["hi"]])
+    lo = [float(x) for x in d["lo"]]
+    hi = [float(x) for x in d["hi"]]
+    if not (len(lo) == 6 and len(hi) == 6):
+        raise ValueError("b601 limits must have 6 lo and 6 hi values")
+    for i, (lo_i, hi_i) in enumerate(zip(lo, hi)):
+        if lo_i > hi_i:
+            raise ValueError(f"b601 limits inverted at joint {i}: lo>hi")
+    return JointLimits(lo=lo, hi=hi)
