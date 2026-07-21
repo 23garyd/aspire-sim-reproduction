@@ -1,0 +1,14 @@
+{
+  "backend": "real",
+  "lift_threshold": 0.10,
+  "grasp_tol": 0.03,
+  "min_object_open": 0.01,
+  "closed_ref": 0.0,
+  "grip_lo": 0.0,
+  "grip_hi": 0.08,
+  "marker_size": 0.03,
+  "base_frame": "base_link",
+  "gripper_frame": "tool0",
+  "extrinsic": "robot_b601/hand_eye.json",
+  "_note": "on-bench: finalize grip_lo/grip_hi + min_object_open (object width) + marker_size from measurement; confirm base_frame/gripper_frame against rebotarm_bringup URDF; hand_eye.json from M3b calibration."
+}
