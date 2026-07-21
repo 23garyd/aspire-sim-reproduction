@@ -285,7 +285,7 @@ git commit -m "feat(b601): ArUco cube detection -> pose in camera frame (M3b)"
 
 **Interfaces:**
 - Consumes: `robot_b601.transforms.{make_transform, invert}`, `robot_b601.perception.CameraIntrinsics`.
-- Produces: `CharucoBoard(squares_x=5, squares_y=7, square_length=0.03, marker_length=0.022, dict_id=DICT_4X4_50)` with `.cv() -> (cv_board, dictionary)`; `detect_charuco_pose(frame, board, intrinsics) -> np.ndarray(4,4) | None` (`T_target_cam`); `HandEyeSample(T_target_cam, T_gripper_base)`; `solve_hand_eye(samples, method=cv2.CALIB_HAND_EYE_TSAI) -> np.ndarray(4,4)` (`T_cam_gripper`, raises `ValueError` if `<3` samples); `calibration_residual(samples, T_cam_gripper) -> float`; `save_extrinsic(path, T)`; `load_extrinsic(path=None) -> np.ndarray(4,4)` (missing/None → identity; fail-loud on non-4×4 or non-orthonormal rotation).
+- Produces: `CharucoBoard(squares_x=5, squares_y=7, square_length=0.03, marker_length=0.022, dict_id=DICT_4X4_50)` with `.cv() -> (cv_board, dictionary)`; `detect_charuco_pose(frame, board, intrinsics) -> np.ndarray(4,4) | None` (`T_target_cam`); `HandEyeSample(T_target_cam, T_gripper_base)`; `solve_hand_eye(samples, method=cv2.CALIB_HAND_EYE_PARK) -> np.ndarray(4,4)` (`T_cam_gripper`, raises `ValueError` if `<3` samples; PARK is robust across the full rotation space — TSAI breaks down near 180° relative rotations); `calibration_residual(samples, T_cam_gripper) -> float`; `save_extrinsic(path, T)`; `load_extrinsic(path=None) -> np.ndarray(4,4)` (missing/None → identity; fail-loud on non-4×4 or non-orthonormal rotation).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -460,8 +460,10 @@ class HandEyeSample:
     T_gripper_base: np.ndarray   # gripper pose in base
 
 
-def solve_hand_eye(samples, method=cv2.CALIB_HAND_EYE_TSAI) -> np.ndarray:
-    """Return T_cam_gripper (camera pose in gripper, 4x4) from >=3 samples."""
+def solve_hand_eye(samples, method=cv2.CALIB_HAND_EYE_PARK) -> np.ndarray:
+    """Return T_cam_gripper (camera pose in gripper, 4x4) from >=3 samples.
+    PARK (Park & Martin) is robust across the full rotation space; the classic TSAI
+    method breaks down near 180-degree relative rotations."""
     if len(samples) < 3:
         raise ValueError(f"hand-eye calibration needs >=3 samples, got {len(samples)}")
     R_g2b = [np.asarray(s.T_gripper_base, float)[:3, :3] for s in samples]
