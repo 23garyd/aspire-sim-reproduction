@@ -67,7 +67,11 @@ def main(argv=None):
     transport = B601RosTransport(limits=limits)
     transport.connect()
     node = B601Node(transport, clock=RealClock(), home=look)
-    node.move_to_joints(look)
+    # SAFETY: hold the REAL gripper (not B601Node's hardcoded 0.0 default) and fail
+    # loud if no /joint_states arrives, instead of a bare node.move_to_joints(look) --
+    # see robot_b601/look_pose.py for the shared M3a/M3b rationale.
+    from robot_b601.look_pose import move_to_look_pose
+    move_to_look_pose(transport, node, RealClock(), look)
 
     camera = D405Camera(); camera.connect()
     tf = TfGripperPose(); tf.connect()
