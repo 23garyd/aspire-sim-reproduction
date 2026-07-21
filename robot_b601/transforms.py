@@ -1,6 +1,11 @@
 """Pure numpy/scipy 4x4 homogeneous transform helpers for B601 M3b perception.
 
-Convention: T_a_b maps a point in frame b into frame a (b's pose expressed in a).
+Convention (object-first, matching the variable names used throughout): T_x_y is the
+pose of x expressed in frame y -- equivalently, the 4x4 that maps a point in frame x
+into frame y. So T_cube_cam is the cube expressed in the camera, T_cam_gripper the
+camera expressed in the gripper, T_gripper_base the gripper expressed in the base.
+Chaining is object-first: T_cube_cam then T_cam_gripper then T_gripper_base yields the
+cube expressed in the base. Keep this ordering when editing compose() calls.
 No cv2, no I/O -- the numeric core the perception/calibration code composes."""
 from __future__ import annotations
 
@@ -37,8 +42,9 @@ def invert(T) -> np.ndarray:
 
 
 def cube_base_pose(T_cube_cam, T_cam_gripper, T_gripper_base) -> CubePose:
-    """Move a cube pose seen in the CAMERA frame into the ARM/BASE frame:
-    T_base_cube = T_gripper_base @ T_cam_gripper @ T_cube_cam."""
+    """Move a cube pose seen in the CAMERA frame into the ARM/BASE frame.
+    T_cube_base (cube expressed in base) = T_gripper_base @ T_cam_gripper @ T_cube_cam
+    -- the object-first chain cube->cam->gripper->base (see the module docstring)."""
     T = compose(T_gripper_base, T_cam_gripper, T_cube_cam)
     x, y, z = T[:3, 3]
     qx, qy, qz, qw = Rotation.from_matrix(T[:3, :3]).as_quat()
