@@ -45,3 +45,33 @@ def load_limits(path=None) -> JointLimits:
         if lo_i > hi_i:
             raise ValueError(f"b601 limits inverted at joint {i}: lo>hi")
     return JointLimits(lo=lo, hi=hi)
+
+
+@dataclass(frozen=True)
+class GripperLimits:
+    lo: float          # fully-closed position (metres)
+    hi: float          # fully-open position (metres)
+
+
+# Conservative default gripper stroke (metres) until finalized on-bench.
+DEFAULT_GRIPPER_LIMITS = GripperLimits(lo=0.0, hi=0.08)
+
+
+def clamp_gripper(pos, limits: GripperLimits):
+    """Clamp a gripper command into [lo, hi] so set_gripper can never over-travel/crush."""
+    c = min(max(float(pos), limits.lo), limits.hi)
+    return c, (c != pos)
+
+
+def load_gripper_limits(path=None) -> GripperLimits:
+    """Gripper limits from a b601 config JSON (keys grip_lo/grip_hi). Missing file or
+    missing keys -> conservative default; inverted lo>hi -> fail loud."""
+    if path is None or not os.path.exists(path):
+        return DEFAULT_GRIPPER_LIMITS
+    d = json.loads(Path(path).read_text())
+    if "grip_lo" not in d or "grip_hi" not in d:
+        return DEFAULT_GRIPPER_LIMITS
+    lo, hi = float(d["grip_lo"]), float(d["grip_hi"])
+    if lo > hi:
+        raise ValueError("b601 gripper limits inverted: grip_lo > grip_hi")
+    return GripperLimits(lo=lo, hi=hi)
