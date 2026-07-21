@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from robot_b601.transforms import make_transform
+from robot_b601.transforms import make_transform, cube_base_pose
 
 ARUCO_DICT = cv2.aruco.DICT_4X4_50
 
@@ -44,3 +44,26 @@ def detect_cube_pose(color, intrinsics: CameraIntrinsics, marker_size: float,
         [corners[i]], marker_size, intrinsics.matrix(), np.zeros(5))
     R, _ = cv2.Rodrigues(rvecs[0][0])
     return make_transform(R, tvecs[0][0])
+
+
+@dataclass
+class RealPerceptionSource:
+    """Compose a live D405 capture + the calibrated extrinsic + gripper TF into a real
+    arm-frame get_cube_pose(). camera and tf are duck-typed (D405Camera/FakeD405 and
+    TfGripperPose/FakeGripperPose)."""
+    camera: object
+    tf: object
+    T_cam_gripper: np.ndarray
+    marker_size: float
+    marker_id: int = 7
+    base_frame: str = "base_link"
+    gripper_frame: str = "tool0"
+
+    def get_cube_pose(self):
+        frame = self.camera.capture()
+        T_cube_cam = detect_cube_pose(frame.color, frame.intrinsics,
+                                      self.marker_size, self.marker_id)
+        if T_cube_cam is None:
+            raise RuntimeError("no cube ArUco marker detected in the D405 frame")
+        T_gripper_base = self.tf.lookup(self.base_frame, self.gripper_frame)
+        return cube_base_pose(T_cube_cam, self.T_cam_gripper, T_gripper_base)
