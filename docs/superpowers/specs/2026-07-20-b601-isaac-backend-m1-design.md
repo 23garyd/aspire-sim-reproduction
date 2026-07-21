@@ -17,10 +17,14 @@ hard unknown solved here is that the vendor Isaac package is **command-only
 can close the loop (command → observe → converge). No manipulation objects,
 ground-truth poses, or reward yet — those are Milestone 2.
 
-**Sim target:** the **RS** USD (`usd/RS-rebot-dev-arm/00-arm-rs_asm-v3.usda`,
-prim `/World/reBotArm`) — kinematically identical to the DM arm; the DM/RS
-difference is the real-hardware motor/CAN layer, transparent to the Isaac
-kinematic sim. **DM is the real-hardware target (Milestone 3).**
+**Target: RS end-to-end** — the **RS** USD (`usd/RS-rebot-dev-arm/00-arm-rs_asm-v3.usda`,
+prim `/World/reBotArm`) in sim, and the **RS (Robstride)** arm as the real-hardware
+target (Milestone 3). RS is chosen throughout for full sim-to-real consistency
+(same arm in sim and reality) and because RS ships the mature vendor stack —
+completed Isaac integration and the fuller ROS 2 + MoveIt2 path (kinematics,
+trajectory planning, gravity compensation). This also retires the missing-DM-USD
+blocker entirely. The `B601Transport` seam keeps the real-hardware control layer a
+swap, not a redesign, if the motor variant ever changes.
 
 ## What exists (the two seams we build on)
 
@@ -131,7 +135,7 @@ ROS 2/CAN joint-state path; the `B601Transport` seam is unchanged.)
 - No EE-pose/IK primitive yet (M1 is joint-space; the vendor IK sender is the fast
   follow for `move_to_pose`).
 - No D405 / camera / perception (M3, real hardware).
-- No real-hardware ROS 2/CAN path or DM motor control (M3).
+- No real-hardware ROS 2/CAN path or RS (Robstride) motor control (M3).
 - No changes to `aspire/` package internals (reuse `schemas.py` only).
 
 ## Deliverable mapping
@@ -139,4 +143,4 @@ ROS 2/CAN joint-state path; the `B601Transport` seam is unchanged.)
 - Advances the "move to a different robot" goal: ASPIRE's execution engine + trace
   pipeline proven on the B601-in-Isaac (RS USD), with the two-way comms solved.
 - Sets up Milestone 2 (a B601 manipulation task + privileged reward → the full
-  ASPIRE loop on the new robot) and Milestone 3 (real B601-DM + D405).
+  ASPIRE loop on the new robot) and Milestone 3 (real B601-RS + D405).
