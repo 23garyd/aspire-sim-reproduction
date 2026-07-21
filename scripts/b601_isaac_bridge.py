@@ -38,10 +38,17 @@ def main():
     seq = 0
 
     def apply_command(msg, arm):
-        arm.set_joint_position_targets(msg["joint_positions"])   # + gripper axis
-        # (gripper mapping per the USD's gripper joint; see vendor receiver)
+        arm.set_joint_position_targets(msg["joint_positions"])
+        # TODO(on-box): WIRE THE GRIPPER. msg["gripper_position"] (meters) is currently
+        # dropped — map it to the USD's gripper joint index/command. If left unwired,
+        # set_gripper() will TIMEOUT (fails safe, no false pass) but gripper waypoints
+        # never execute. Do not ship the bridge without this.
 
     def read_state(arm):
+        # TODO(on-box): there is no get_gripper_position() on Isaac ArticulationView.
+        # get_joint_positions() returns ALL articulation DOFs (7+); slice the 6 arm
+        # joints and derive the gripper scalar from the gripper DOF index. The wire
+        # schema is exactly {joint_positions:[6], gripper_position:float}.
         return arm.get_joint_positions(), arm.get_gripper_position()
 
     # --- live loop (pseudocode framed by the real Isaac stepping API) ---
