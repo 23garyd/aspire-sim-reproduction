@@ -3,7 +3,7 @@
 `aspire.run --engine capx --capx-cmd`. Per seed: reset env, audit the program text
 (reused forbidden-API wall), exec it against the env's privileged primitive namespace,
 score by env.success(). --selftest uses the deterministic FakeCubeLiftEnv (no Isaac);
-a real --config-path uses IsaacCubeLiftEnv (on-box)."""
+a real --config-path builds RealCubeLiftEnv (fake or on-bench backend, per config)."""
 import argparse
 import json
 import os
@@ -41,8 +41,9 @@ def run_episode(program_path, seed, env):
 def _build_env(args):
     if args.selftest or not args.config_path:
         return FakeCubeLiftEnv()
-    from robot_b601.task import IsaacCubeLiftEnv     # deferred: Isaac only on the live path
-    return IsaacCubeLiftEnv(args.config_path)
+    cfg = json.loads(Path(args.config_path).read_text())
+    from robot_b601.task import build_real_cube_lift_env   # deferred: real deps only here
+    return build_real_cube_lift_env(cfg)
 
 
 def main(argv=None):

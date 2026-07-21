@@ -1,0 +1,11 @@
+{
+  "backend": "fake",
+  "cube": {"x": 0.40, "y": 0.00, "z": 0.02},
+  "lift_threshold": 0.10,
+  "grasp_tol": 0.03,
+  "object_width": 0.03,
+  "closed_ref": 0.0,
+  "min_object_open": 0.01,
+  "grip_lo": 0.0,
+  "grip_hi": 0.08
+}
