@@ -114,8 +114,10 @@ class RealMotionBackend:
 
     def set_gripper(self, pos) -> MoveResult:
         self._require_connected()
-        clamp_gripper(pos, self._glim)               # clamp before any real command
-        raise NotImplementedError("on-bench: vendor gripper controller")
+        target, _ = clamp_gripper(pos, self._glim)   # clamp before any real command
+        # on-bench: send `target` (the CLAMPED value) to the vendor gripper controller --
+        # never the raw pos -- this clamp is what closes the gripper-crush hazard.
+        raise NotImplementedError(f"on-bench: command vendor gripper to {target}")
 
     def gripper_position(self) -> float:
         self._require_connected()

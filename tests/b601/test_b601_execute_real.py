@@ -27,3 +27,5 @@ def test_selftest_still_uses_fake_cube_lift_env(tmp_path):
          "--seeds", "0,1", "--out-dir", str(out), "--selftest"],
         capture_output=True, text=True, cwd=REPO)
     assert proc.returncode == 0, proc.stderr      # --selftest path unchanged, still runs
+    result = json.loads((out / "result.json").read_text())
+    assert result["score"] == 1.0                 # baseline lifts on the M2 FakeCubeLiftEnv too
