@@ -1,0 +1,7 @@
+# B601 cube-lift task config (used by IsaacCubeLiftEnv on the box; the Fake env uses
+# built-in defaults). Frames/units: meters, world frame.
+cube_xy: [0.4, 0.0]
+table_z: 0.0
+grasp_tol: 0.03
+lift_threshold: 0.10
+cube_usd: "cube.usd"        # spawned into the RS scene on the box

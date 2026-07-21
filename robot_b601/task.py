@@ -86,3 +86,22 @@ class FakeCubeLiftEnv:
 
     def traces(self) -> list:
         return list(self._traces)
+
+
+class IsaacCubeLiftEnv:
+    """Live, on-box cube-lift in Isaac Sim (RS USD). Spawns the cube, drives move_to_pose
+    via the vendor IK sender -> M1 B601Node -> the :5005/:5006 bridge, and reads real
+    ground-truth cube pose + physics grasp/lift. INTENTIONAL live-only stub: Isaac imports
+    are deferred and the real ArticulationView/cube-spawn API is finalized on the box
+    (M1 b601_isaac_bridge.py is the motion reference; only cube spawn + ground-truth read
+    are added here). Not unit-tested (needs Isaac)."""
+
+    def __init__(self, config_path: str):
+        self._config_path = config_path
+        raise SystemExit(
+            "IsaacCubeLiftEnv is finalized on the box (needs Isaac + ISAACSIM_ROOT). "
+            "TODO(on-box): load cube_lift.yaml; spawn the cube USD into the RS scene; "
+            "implement get_cube_pose from the cube prim's world transform; route "
+            "move_to_pose through IK -> B601Node.move_to_joints; success = cube prim "
+            "world-z > lift_threshold. namespace()/success()/traces() mirror "
+            "FakeCubeLiftEnv exactly so b601_execute is unchanged.")
