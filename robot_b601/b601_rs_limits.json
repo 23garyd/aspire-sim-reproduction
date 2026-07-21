@@ -1,0 +1,5 @@
+{
+  "_comment": "Conservative default B601-RS joint limits (radians). FINALIZE from the B601-RS URDF (rebotarm_bringup) during on-bench bring-up.",
+  "lo": [-2.6, -2.6, -2.6, -2.6, -2.6, -2.6],
+  "hi": [2.6, 2.6, 2.6, 2.6, 2.6, 2.6]
+}
