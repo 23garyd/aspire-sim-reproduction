@@ -1,3 +1,9 @@
+"""M3d capstone: proves the ASPIRE repair-loop WIRING on RealCubeLiftEnv -- a failing
+baseline falls below theta, Stage-1 runs, the fix re-scores, and the pipeline validates.
+It does NOT prove an LLM can diagnose/fix: the actor is a scripted FakeActor whose "repair"
+is the known-correct M3c baseline. The real ClaudeCodeActor diagnosing the failing traces
+on the arm is the on-bench + credits capstone (see the plan's live-run note). Scores are
+genuinely computed by the real capx engine on the fake-backed env, not stubbed."""
 import sys
 from pathlib import Path
 
