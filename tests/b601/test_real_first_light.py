@@ -88,3 +88,57 @@ def test_run_raises_if_no_joint_state_arrives_within_timeout():
     with pytest.raises(RuntimeError):
         fl.run(transport, clock, delta_max=0.15, state_timeout=0.05)
     assert transport.publish_calls == 0    # no move was ever commanded to the real arm
+
+
+class _GripperReportingFakeTransport:
+    """FakeB601Transport (M1) always reports gripper_position starting at 0.0 -- fine
+    for M1 sim, but a REAL gripper is essentially never exactly 0.0. This wraps it so
+    the initial reported state carries a real, non-zero gripper position (grip_start),
+    and records every published JointCommand so tests can assert on the commanded
+    gripper value without touching robot_b601/transport.py."""
+
+    def __init__(self, start, grip_start):
+        from robot_b601.transport import FakeB601Transport
+        self._inner = FakeB601Transport(start=start)
+        self._inner._grip_cur = grip_start
+        self._inner._grip_tgt = grip_start
+        self.published = []
+
+    def connect(self):
+        pass
+
+    def publish(self, cmd):
+        self.published.append(cmd)
+        return self._inner.publish(cmd)
+
+    def latest(self):
+        return self._inner.latest()
+
+
+def test_run_holds_real_gripper_not_hardcoded_zero():
+    """SAFETY: the gripper-axis analog of test_run_uses_real_current_pose_as_home_not_zero.
+    Every commanded JointCommand must carry the REAL current gripper position, so the
+    real gripper stays put instead of being driven to a hardcoded 0.0 from wherever it
+    actually is. This must fail against the pre-fix code (gripper hardcoded to 0.0)."""
+    import b601_real_first_light as fl
+    from robot_b601.clock import ManualClock
+
+    home_pose = [0.4, -0.3, 0.2, 0.1, -0.2, 0.05]
+    real_grip = 0.041
+    transport = _GripperReportingFakeTransport(start=home_pose, grip_start=real_grip)
+    res = fl.run(transport, ManualClock(), delta_max=0.15)
+
+    assert res.score == 1.0
+    assert transport.published, "no commands were published to the transport"
+    for cmd in transport.published:
+        assert cmd.gripper_position == real_grip
+        assert cmd.gripper_position != 0.0
+
+
+def test_large_delta_max_warns_on_stderr_but_still_dry_runs_clean():
+    proc = subprocess.run(
+        [sys.executable, "scripts/b601_real_first_light.py", "--dry-run", "--delta-max", "1.0"],
+        capture_output=True, text=True, cwd=REPO)
+    assert proc.returncode == 0, proc.stderr
+    assert "warning" in proc.stderr.lower()
+    assert "1.0" in proc.stderr or "delta" in proc.stderr.lower()

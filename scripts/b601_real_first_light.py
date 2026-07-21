@@ -24,6 +24,9 @@ from robot_b601.limits import clamp_to_limits, load_limits
 from robot_b601.node import B601Node
 
 
+DELTA_MAX_WARN_CEILING = 0.3   # rad; conservative sanity ceiling for first contact (warn only, not a hard fail -- the absolute limit clamp is the backstop)
+
+
 def plan_waypoints(home, delta_max: float = 0.15):
     """home -> home + a small bounded delta on all joints -> home. Deliberately gentle
     for first contact with a real arm; the limit clamp is the backstop."""
@@ -58,7 +61,18 @@ def run(transport, clock, delta_max: float = 0.15, state_timeout: float = 2.0):
             f"{state_timeout}s of connect() -- refusing to move without a known "
             f"current pose (will NOT fall back to a hardcoded home)")
     home = state.joint_positions
+    # SAFETY: same rationale as the joint home-read above, on the gripper axis. Every
+    # JointCommand carries a gripper_position (B601Node re-streams joints+gripper
+    # together on every poll; B601RosTransport packs it onto the wire); B601Node
+    # defaults its gripper-hold value to 0.0 and never sets it on its own. Left alone,
+    # first light would command the REAL gripper straight from its true (unknown)
+    # position to a hardcoded 0.0 -- unbounded real gripper motion. Capture the real
+    # gripper here and hold it via B601Node's public set_gripper() (called directly on
+    # the node, not through the engine, so this does not add a step to eng.result()'s
+    # traces) so the gripper stays exactly where it physically is, no motion at all.
+    home_grip = state.gripper_position
     node = B601Node(transport, clock=clock, home=home)
+    node.set_gripper(home_grip)
     eng = B601Engine(node, clock=clock)
     for wp in plan_waypoints(home, delta_max):
         eng.move_to_joints(wp)
@@ -77,6 +91,11 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     limits = load_limits(args.limits)
+    if args.delta_max > DELTA_MAX_WARN_CEILING:
+        print(f"[WARNING] --delta-max={args.delta_max} exceeds the conservative "
+              f"{DELTA_MAX_WARN_CEILING} rad ceiling for first contact -- the absolute "
+              f"joint-limit clamp still backstops this, but double-check this is intended.",
+              file=sys.stderr)
     if args.dry_run:
         home = [0.0] * 6                          # nominal home for the preview
         print(f"[dry-run] limits lo={limits.lo} hi={limits.hi} delta_max={args.delta_max}")
