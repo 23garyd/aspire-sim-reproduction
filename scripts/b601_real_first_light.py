@@ -13,7 +13,6 @@ Live use:
   python3 scripts/b601_real_first_light.py --limits robot_b601/b601_rs_limits.json
 """
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -32,10 +31,33 @@ def plan_waypoints(home, delta_max: float = 0.15):
     return [list(home), bumped, list(home)]
 
 
-def run(transport, clock, delta_max: float = 0.15):
+def _wait_for_state(transport, clock, timeout_s: float, poll_dt: float = 0.01):
+    """Poll transport.latest() on the injected clock until a real state arrives or
+    the timeout elapses. Mirrors B601Node._stream_until's clock/poll idiom (same
+    now()/sleep() usage) so this is deterministic and testable with ManualClock."""
+    t0 = clock.now()
+    while True:
+        state = transport.latest()
+        if state is not None:
+            return state
+        if clock.now() - t0 >= timeout_s:
+            return None
+        clock.sleep(poll_dt)
+
+
+def run(transport, clock, delta_max: float = 0.15, state_timeout: float = 2.0):
     transport.connect()
-    state = transport.latest()
-    home = state.joint_positions if state is not None else [0.0] * 6
+    # SAFETY: connect() returns as soon as the ROS 2 spin thread starts -- it does NOT
+    # guarantee /joint_states has arrived yet. Poll (bounded) for the REAL current pose
+    # and use THAT as home. Never fall back to a hardcoded pose: doing so would jump the
+    # real arm from its true (unknown) pose to that hardcoded one on the first move.
+    state = _wait_for_state(transport, clock, state_timeout)
+    if state is None:
+        raise RuntimeError(
+            f"b601_real_first_light: no /joint_states received within "
+            f"{state_timeout}s of connect() -- refusing to move without a known "
+            f"current pose (will NOT fall back to a hardcoded home)")
+    home = state.joint_positions
     node = B601Node(transport, clock=clock, home=home)
     eng = B601Engine(node, clock=clock)
     for wp in plan_waypoints(home, delta_max):
