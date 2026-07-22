@@ -1,0 +1,117 @@
+{
+ "rows": [
+  {
+   "task": "spatial_3",
+   "arm": "warm",
+   "repeat": 1,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm",
+   "repeat": 2,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "repeat": 1,
+   "attempts": 11,
+   "attempts_censored": 11,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "repeat": 2,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_5",
+   "arm": "warm",
+   "repeat": 1,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 1
+  },
+  {
+   "task": "spatial_5",
+   "arm": "warm",
+   "repeat": 2,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_5",
+   "arm": "cold",
+   "repeat": 1,
+   "attempts": 3,
+   "attempts_censored": 3,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_5",
+   "arm": "cold",
+   "repeat": 2,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "repeat": 1,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "repeat": 1,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  }
+ ],
+ "warm": {
+  "n": 4,
+  "success_rate": 0.75,
+  "mean_attempts": 251.25,
+  "mean_attempts_solved_only": 2.0
+ },
+ "cold": {
+  "n": 6,
+  "success_rate": 0.5,
+  "mean_attempts": 502.1666666666667,
+  "mean_attempts_solved_only": 5.333333333333333
+ },
+ "verdict": "H1 (suggestive): warm (accumulated library) beats cold \u2014 higher success (0.75 vs 0.50) and/or fewer attempts (251.25 vs 502.1666666666667). Lean N: not conclusive."
+}
