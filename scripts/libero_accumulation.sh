@@ -15,7 +15,7 @@ CFGDIR="$ROOT/configs"
 ACCUM_LIB="$ROOT/accumulated_library"
 DRY=${DRY:-0}
 ACCUM_TASKS=(2 1 0)          # curriculum: bank the grasp-place skill
-CALIB_SHORTLIST=(8 6 5 3)    # held-out candidates; cold calibration picks 2
+CALIB_SHORTLIST=(8 6 5 3 9 7)    # held-out candidates; cold calibration (--t 5) picks 2
 REPEATS=2
 
 mkdir -p "$ROOT" "$CFGDIR"
@@ -59,15 +59,15 @@ if [ "$DRY" != 1 ]; then
   [ "$n" -ge 1 ] || { echo "GATE FAIL: Phase 1 admitted 0 skills -> warm==cold trivially. Stopping before Phase 2."; exit 2; }
 fi
 
-echo "=== PHASE 2a: cold calibration (--t 3) over held-out shortlist -> pick 2 solvable ==="
+echo "=== PHASE 2a: cold calibration (--t 5) over held-out shortlist -> pick 2 solvable ==="
 SELECTED=()
 for tid in "${CALIB_SHORTLIST[@]}"; do
-  run_one "$tid" "$ROOT/calib/empty_$tid" "test/spatial_$tid/cold/1" 3    # empty lib per task; this IS cold repeat 1
+  run_one "$tid" "$ROOT/calib/empty_$tid" "test/spatial_$tid/cold/1" 5    # empty lib per task; this IS cold repeat 1
   if [ "$DRY" != 1 ]; then
     solved=$(python3 -c "import json; s=json.load(open('$ROOT/test/spatial_$tid/cold/1/summary.json')); print(1 if float(s.get('dbg_score',0))>=1.0 else 0)" 2>/dev/null || echo 0)
     [ "$solved" = 1 ] && SELECTED+=("$tid")
   else
-    echo "[dry] calibrate held-out task_id $tid (cold, --t 3); solvable ones become test tasks"
+    echo "[dry] calibrate held-out task_id $tid (cold, --t 5); solvable ones become test tasks"
   fi
   [ "${#SELECTED[@]}" -ge 2 ] && break
 done
