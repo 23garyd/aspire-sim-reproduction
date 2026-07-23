@@ -29,4 +29,5 @@ NEXT: on completion -> analyze -> check H1
   - Phase 1: spatial_0/1 FAILED (dbg 0.0), spatial_2 SOLVED (dbg 1.0 val 1.0 adm 2). GATE PASS.
   - banked STRATEGY skills (not plumbing!): grasping/rim-grasp-wide-vessel,
     placement/compensate-offset-grasp-at-place. Premise validated.
-  - now in Phase 2A frontier probe.
+  - Phase 2A: frontier tasks SELECTED = spatial_8 (1/2), spatial_6 (1/2) — knife's-edge.
+  - now in Phase 2B: warm vs cold, 5 reps/arm at t=5 (20 test runs).
