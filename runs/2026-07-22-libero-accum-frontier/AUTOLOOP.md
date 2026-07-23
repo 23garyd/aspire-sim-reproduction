@@ -17,12 +17,12 @@ H1: warm > cold matched held-out success on frontier tasks AND Fisher-exact p < 
 - Ping user ONLY at terminal state.
 
 ## State machine
-STATE: BUILD  (build deliverables via subagent -> tests green -> commit)
-NEXT: launch campaign attempt 1
+STATE: RUNNING attempt 1 (build committed d25ff80, 325 tests green)
+NEXT: on completion -> analyze -> check H1
 
 ## Decision log
 - 2026-07-22: adopted Standard tier (2 frontier tasks, N=5/arm), deeper baseline +
   frontier selection, per approved spec. Loop armed.
 
 ## Attempt log
-(empty)
+- attempt 1: launched 2026-07-22; deeper baseline + frontier, N=5/arm; root=~/aspire_runs/libero_accum_v2
