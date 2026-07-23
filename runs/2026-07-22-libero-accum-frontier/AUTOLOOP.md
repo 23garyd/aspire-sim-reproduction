@@ -26,3 +26,7 @@ NEXT: on completion -> analyze -> check H1
 
 ## Attempt log
 - attempt 1: launched 2026-07-22; deeper baseline + frontier, N=5/arm; root=~/aspire_runs/libero_accum_v2
+  - Phase 1: spatial_0/1 FAILED (dbg 0.0), spatial_2 SOLVED (dbg 1.0 val 1.0 adm 2). GATE PASS.
+  - banked STRATEGY skills (not plumbing!): grasping/rim-grasp-wide-vessel,
+    placement/compensate-offset-grasp-at-place. Premise validated.
+  - now in Phase 2A frontier probe.
