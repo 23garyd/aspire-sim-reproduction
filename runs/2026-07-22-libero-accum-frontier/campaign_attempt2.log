@@ -1,0 +1,42 @@
+=== PHASE 0: preflight + freeze library ===
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /home/demo/cap-x/capx/third_party/libero_dependencies/robosuite/robosuite/scripts/setup_macros.py (__init__.py:9)
+frozen library skills: 2
+selected test tasks = [8,6], TEST_T=2
+=== PHASE 2B: warm vs cold on frontier tasks (5/arm, --t 2) ===
+=== ANALYZE ===
+selected test tasks: ['spatial_6', 'spatial_8']
+
+task           arm   rep  solved  val   attempts  admitted
+-------------- ----- ---- ------- ----- --------- --------
+spatial_6      cold  1    True    True  2         2
+spatial_6      cold  2    True    False 2         0
+spatial_6      cold  3    True    False 2         0
+spatial_6      cold  4    True    True  2         2
+spatial_6      cold  5    True    False 2         0
+spatial_6      warm  1    False   False None      0
+spatial_6      warm  2    False   False None      0
+spatial_6      warm  3    True    True  2         2
+spatial_6      warm  4    True    True  2         1
+spatial_6      warm  5    False   False None      0
+spatial_8      cold  1    False   False None      0
+spatial_8      cold  2    True    True  7         1
+spatial_8      cold  3    True    True  9         2
+spatial_8      cold  4    False   False None      0
+spatial_8      cold  5    True    True  9         2
+spatial_8      warm  1    True    True  2         1
+spatial_8      warm  2    True    False 2         0
+spatial_8      warm  3    True    True  2         0
+spatial_8      warm  4    True    True  2         1
+spatial_8      warm  5    True    True  2         0
+
+  spatial_6: warm 0.40 (2/5) vs cold 1.00 (5/5)
+  spatial_8: warm 1.00 (5/5) vs cold 0.60 (3/5)
+
+WARM: {'n': 10, 'n_solved': 7, 'success_rate': 0.7, 'mean_attempts_solved_only': 2.0, 'censored': 3}
+COLD: {'n': 10, 'n_solved': 8, 'success_rate': 0.8, 'mean_attempts_solved_only': 4.375, 'censored': 2}
+FISHER p (matched 2x2): 1.0000
+
+VERDICT: H0 (null): accumulation did not change matched held-out solvability at this budget (warm 0.70 vs cold 0.80, Fisher p=1.0000). Attempts-to-solve delta (cold-warm, solved runs): 2.375.
+=== ATTEMPT 2 DONE root=/home/demo/aspire_runs/libero_accum_v2b ===

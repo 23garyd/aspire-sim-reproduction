@@ -17,8 +17,7 @@ H1: warm > cold matched held-out success on frontier tasks AND Fisher-exact p < 
 - Ping user ONLY at terminal state.
 
 ## State machine
-STATE: RUNNING attempt 2 (t=2 harden-frontier). attempt 1 = H0 null (p=1.0), strategy premise validated.
-NEXT: on completion -> analyze -> check H1; if null, attempt 3 (last).
+STATE: DONE (terminal). 2 attempts, both H0 null on success (p=1.0). Premise validated; speed+conditional-transfer, not solvability. Loop stopped.
 
 ## Decision log
 - 2026-07-22: adopted Standard tier (2 frontier tasks, N=5/arm), deeper baseline +
@@ -35,4 +34,12 @@ NEXT: on completion -> analyze -> check H1; if null, attempt 3 (last).
     Premise VALIDATED (strategy skills banked) but no success gap: cold too solvable at t=5 (budget-ceiling, not low-N).
 - attempt 2: HARDEN FRONTIER — reuse frozen 2-skill library + same tasks 8,6, TEST_T=2, N=5 (test-only, skip
   re-accumulate/probe). Decision: chose frontier-hardening over spec's N->8 because the blocker is the t=5 ceiling,
-  not power. root=~/aspire_runs/libero_accum_v2b. runner=scripts/libero_accumulation_v2b_hardfrontier.sh. LAUNCHED.
+  not power. root=~/aspire_runs/libero_accum_v2b. runner=scripts/libero_accumulation_v2b_hardfrontier.sh.
+  - RESULT: H0 null AGAIN (warm 0.70 vs cold 0.80, Fisher p=1.0). NEGATIVE TRANSFER: spatial_8 warm 5/5 cold 3/5
+    (warm wins), spatial_6 warm 2/5 cold 5/5 (cold wins — banked grasp from spatial_2 misleads on spatial_6).
+    Attempts-to-solve still favors warm (2.0 vs 4.375).
+
+## TERMINAL (2 attempts, ~64 runs) — loop STOPPED
+Verdict: premise validated (strategy skills banked); NO solvability gap (two nulls, both p=1.0); robust SPEED
+benefit (warm faster both attempts); transfer is task-dependent and can be NEGATIVE (helps matching geometry,
+hurts mismatching). Did NOT run attempt 3 — finding complete + consistent, user credit-conscious. See FINDINGS.md.

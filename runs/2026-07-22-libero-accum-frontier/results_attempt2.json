@@ -1,0 +1,258 @@
+{
+ "rows": [
+  {
+   "task": "spatial_6",
+   "arm": "warm",
+   "repeat": 1,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm",
+   "repeat": 2,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm",
+   "repeat": 3,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm",
+   "repeat": 4,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 1
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm",
+   "repeat": 5,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "repeat": 1,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "repeat": 2,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "repeat": 3,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "repeat": 4,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "repeat": 5,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm",
+   "repeat": 1,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 1
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm",
+   "repeat": 2,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm",
+   "repeat": 3,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm",
+   "repeat": 4,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 1
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm",
+   "repeat": 5,
+   "attempts": 2,
+   "attempts_censored": 2,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "repeat": 1,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "repeat": 2,
+   "attempts": 7,
+   "attempts_censored": 7,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 1
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "repeat": 3,
+   "attempts": 9,
+   "attempts_censored": 9,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "repeat": 4,
+   "attempts": null,
+   "attempts_censored": 999,
+   "solved": false,
+   "val_solved": false,
+   "admitted": 0
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "repeat": 5,
+   "attempts": 9,
+   "attempts_censored": 9,
+   "solved": true,
+   "val_solved": true,
+   "admitted": 2
+  }
+ ],
+ "selected_tasks": [
+  "spatial_6",
+  "spatial_8"
+ ],
+ "warm": {
+  "n": 10,
+  "n_solved": 7,
+  "success_rate": 0.7,
+  "mean_attempts_solved_only": 2.0,
+  "censored": 3
+ },
+ "cold": {
+  "n": 10,
+  "n_solved": 8,
+  "success_rate": 0.8,
+  "mean_attempts_solved_only": 4.375,
+  "censored": 2
+ },
+ "by_task": {
+  "spatial_6": {
+   "warm": {
+    "n": 5,
+    "n_solved": 2,
+    "success_rate": 0.4,
+    "mean_attempts_solved_only": 2.0,
+    "censored": 3
+   },
+   "cold": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.0,
+    "censored": 0
+   }
+  },
+  "spatial_8": {
+   "warm": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.0,
+    "censored": 0
+   },
+   "cold": {
+    "n": 5,
+    "n_solved": 3,
+    "success_rate": 0.6,
+    "mean_attempts_solved_only": 8.333333333333334,
+    "censored": 2
+   }
+  }
+ },
+ "fisher_p": 1.0,
+ "verdict": "H0 (null): accumulation did not change matched held-out solvability at this budget (warm 0.70 vs cold 0.80, Fisher p=1.0000). Attempts-to-solve delta (cold-warm, solved runs): 2.375."
+}
