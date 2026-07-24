@@ -1,0 +1,48 @@
+=== PHASE 0: preflight guard + config gen ===
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /home/demo/cap-x/capx/third_party/libero_dependencies/robosuite/robosuite/scripts/setup_macros.py (__init__.py:9)
+=== PHASE 1: accumulate deeper baseline on {0 1 2} (shared library /home/demo/aspire_runs/libero_accum_v2/accumulated_library) at --t 5 ===
+=== PHASE 1 GATE: library must bank a PLACE/TRANSPORT/RELEASE strategy skill ===
+GATE PASS: a place/transport/release strategy skill is banked.
+=== PHASE 2A: frontier probe (cold, empty lib, --t 3 x 2) over shortlist {8 6 5 3 9 7 4} ===
+probe spatial_8: solved 1/2
+probe spatial_6: solved 1/2
+=== SELECTED FRONTIER TEST TASKS: 8 6 ===
+wrote /home/demo/aspire_runs/libero_accum_v2/selected_tasks.json = [8,6]
+=== PHASE 2B: warm vs cold on selected tasks (5 repeats/arm, --t 5) ===
+=== PHASE 3: analyze ===
+selected test tasks: ['spatial_6', 'spatial_8']
+
+task           arm   rep  solved  val   attempts  admitted
+-------------- ----- ---- ------- ----- --------- --------
+spatial_6      cold  1    True    False 2         0
+spatial_6      cold  2    True    False 2         0
+spatial_6      cold  3    False   False None      0
+spatial_6      cold  4    True    False 2         0
+spatial_6      cold  5    True    True  3         1
+spatial_6      warm  1    True    False 9         0
+spatial_6      warm  2    False   False None      0
+spatial_6      warm  3    True    False 6         0
+spatial_6      warm  4    True    True  3         1
+spatial_6      warm  5    True    True  2         1
+spatial_8      cold  1    True    False 2         0
+spatial_8      cold  2    False   False None      0
+spatial_8      cold  3    True    False 16        0
+spatial_8      cold  4    True    False 16        0
+spatial_8      cold  5    True    True  3         1
+spatial_8      warm  1    True    True  2         0
+spatial_8      warm  2    True    True  2         0
+spatial_8      warm  3    True    True  2         0
+spatial_8      warm  4    True    True  2         0
+spatial_8      warm  5    True    True  2         1
+
+  spatial_6: warm 0.80 (4/5) vs cold 0.80 (4/5)
+  spatial_8: warm 1.00 (5/5) vs cold 0.80 (4/5)
+
+WARM: {'n': 10, 'n_solved': 9, 'success_rate': 0.9, 'mean_attempts_solved_only': 3.3333333333333335, 'censored': 1}
+COLD: {'n': 10, 'n_solved': 8, 'success_rate': 0.8, 'mean_attempts_solved_only': 5.75, 'censored': 2}
+FISHER p (matched 2x2): 1.0000
+
+VERDICT: H0 (null): accumulation did not change matched held-out solvability at this budget (warm 0.90 vs cold 0.80, Fisher p=1.0000). Attempts-to-solve delta (cold-warm, solved runs): 2.4166666666666665.
+=== CAMPAIGN v2 DONE (2026-07-24T01:47:15Z) root=/home/demo/aspire_runs/libero_accum_v2 ===

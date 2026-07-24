@@ -17,8 +17,8 @@ H1: warm > cold matched held-out success on frontier tasks AND Fisher-exact p < 
 - Ping user ONLY at terminal state.
 
 ## State machine
-STATE: RUNNING attempt 1 (build committed d25ff80, 325 tests green)
-NEXT: on completion -> analyze -> check H1
+STATE: RUNNING attempt 2 (t=2 harden-frontier). attempt 1 = H0 null (p=1.0), strategy premise validated.
+NEXT: on completion -> analyze -> check H1; if null, attempt 3 (last).
 
 ## Decision log
 - 2026-07-22: adopted Standard tier (2 frontier tasks, N=5/arm), deeper baseline +
@@ -30,4 +30,9 @@ NEXT: on completion -> analyze -> check H1
   - banked STRATEGY skills (not plumbing!): grasping/rim-grasp-wide-vessel,
     placement/compensate-offset-grasp-at-place. Premise validated.
   - Phase 2A: frontier tasks SELECTED = spatial_8 (1/2), spatial_6 (1/2) — knife's-edge.
-  - now in Phase 2B: warm vs cold, 5 reps/arm at t=5 (20 test runs).
+  - Phase 2B DONE (t=5): WARM 9/10 (0.90) vs COLD 8/10 (0.80), Fisher p=1.0000 -> H0 null on success.
+    Attempts-to-solve: warm 3.3 vs cold 5.75 (warm faster; spatial_8 cold 9.25 vs warm 2.0). val higher for warm.
+    Premise VALIDATED (strategy skills banked) but no success gap: cold too solvable at t=5 (budget-ceiling, not low-N).
+- attempt 2: HARDEN FRONTIER — reuse frozen 2-skill library + same tasks 8,6, TEST_T=2, N=5 (test-only, skip
+  re-accumulate/probe). Decision: chose frontier-hardening over spec's N->8 because the blocker is the t=5 ceiling,
+  not power. root=~/aspire_runs/libero_accum_v2b. runner=scripts/libero_accumulation_v2b_hardfrontier.sh. LAUNCHED.
