@@ -45,10 +45,16 @@ run_one() {
   touch "$rdir/DONE"
 }
 
-bowl_xy() {  # bowl_xy <task_id> -> echoes "x,y" (cached)
+bowl_xy() {  # bowl_xy <task_id> -> echoes "x,y" (cached). LIBERO prints import banners to
+             # stdout before the coordinate, so keep ONLY the last line, then validate it is
+             # a real "num,num" — a garbage xy would silently disable geometry retrieval.
   local tid=$1 f="$XYDIR/spatial_$tid.txt"
   if [ ! -s "$f" ]; then
-    MUJOCO_GL=egl "$VENV" "$BOWLXY" --workdir /home/demo/cap-x --config-path "$(gen_cfg "$tid")" > "$f"
+    MUJOCO_GL=egl "$VENV" "$BOWLXY" --workdir /home/demo/cap-x --config-path "$(gen_cfg "$tid")" 2>/dev/null | tail -1 > "$f"
+  fi
+  if ! grep -Eq '^-?[0-9]+(\.[0-9]+)?,-?[0-9]+(\.[0-9]+)?$' "$f"; then
+    echo "FATAL: bowl_xy for task $tid is not a coordinate: '$(cat "$f")'. Aborting (would break geometry retrieval)." >&2
+    rm -f "$f"; exit 4
   fi
   cat "$f"
 }
