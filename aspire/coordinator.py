@@ -19,7 +19,7 @@ from aspire.audit import audit_code
 from aspire.config import RunConfig
 from aspire.evosearch import evosearch
 from aspire.skill_library import Skill, SkillLibrary
-from aspire.task_context import (relevant_skills, summarize_traces,
+from aspire.task_context import (relevant_skills, select_skills, summarize_traces,
                                  write_execution_context, write_skills_context,
                                  write_task_metadata)
 
@@ -176,7 +176,7 @@ class TaskPipeline:
         if dbg_score < self.cfg.theta:
             for _ in range(self.cfg.debug_rounds):          # Stage 1
                 write_skills_context(self.task_dir,
-                                     relevant_skills(self.library, latest.traces))
+                                     select_skills(self.library, latest.traces))
                 self._materialize_replay()
                 report = self.actor.run_debug(self.task_dir, model=self.cfg.model_repair)
                 fix = self.task_dir / report.code_path
@@ -200,7 +200,7 @@ class TaskPipeline:
         if self.cfg.t > 0 and dbg_score < self.cfg.theta:   # evosearch fallback
             evosearch_ran = True
             best = evosearch(self.task_dir, self.engine, self.actor, self.cfg,
-                             skills=relevant_skills(self.library, latest.traces))
+                             skills=select_skills(self.library, latest.traces))
             # >= (adopt on ties) vs Stage-1's >: the evosearch best is
             # disk-checkpointed, so prefer it on ties for resumability.
             if best.score >= dbg_score:

@@ -79,6 +79,23 @@ def relevant_skills(library, traces, cap: int = 10) -> list:
     return hits[:cap]
 
 
+def select_skills(library, traces, cap: int = 10) -> list:
+    """Retrieval dispatcher. Geometry mode (env-gated) injects the single
+    nearest-location skill; otherwise the stock keyword retrieval. Behavior is
+    identical to relevant_skills when ASPIRE_RETRIEVAL is unset."""
+    import os
+    if os.environ.get("ASPIRE_RETRIEVAL") == "geometry":
+        xy = os.environ.get("ASPIRE_TARGET_XY", "")
+        parts = xy.split(",")
+        if len(parts) == 2:
+            try:
+                tx, ty = float(parts[0]), float(parts[1])
+                return library.retrieve_by_location((tx, ty), k=1)[:cap]
+            except ValueError:
+                pass
+    return relevant_skills(library, traces, cap)
+
+
 def write_skills_context(task_dir, skills) -> None:
     task_dir = Path(task_dir)
     if skills:
