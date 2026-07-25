@@ -96,6 +96,25 @@ class SkillLibrary:
             out.append(s)
         return out
 
+    def retrieve_by_location(self, target_xy, k=1, include_untagged=True) -> list:
+        tx, ty = float(target_xy[0]), float(target_xy[1])
+        tagged, untagged = [], []
+        for s in self.load_all():
+            parts = s.source_xy.split(",") if s.source_xy else []
+            if len(parts) == 2:
+                try:
+                    sx, sy = float(parts[0]), float(parts[1])
+                except ValueError:
+                    untagged.append(s); continue
+                tagged.append(((sx - tx) ** 2 + (sy - ty) ** 2, s))
+            else:
+                untagged.append(s)
+        tagged.sort(key=lambda pair: pair[0])
+        out = [s for _, s in tagged[:k]]
+        if include_untagged:
+            out += untagged
+        return out
+
     def _reindex(self) -> None:
         lines = ["# Skill index", ""]
         for s in self.load_all():
