@@ -27,3 +27,7 @@ NEXT: on completion -> analyze_libero_tiling.py --heldout 3,6,8 -> pairwise Fish
 
 ## Attempt log
 - launched 2026-07-24; 3 arms x N=5 x heldout {3,6,8}, t=2; tiled lib from ACCUM {0,1,2,4,5,7,9}; root=~/aspire_runs/libero_tiling
+- BUG CAUGHT+FIXED before wasting runs: bowl_xy captured LIBERO import banners (tagged skills 'Robosuite not installed!'),
+  which would make source_xy unparseable -> geometry retrieval falls back to stock -> Arm B == Arm A (experiment ruined).
+  Fix (committed): bowl_xy pipes probe through tail -1 + validates num,num, aborts otherwise. Root nuked, relaunched clean.
+- relaunched as bash ba6et70xi with fixed runner.
