@@ -22,6 +22,7 @@ class Skill:
     strategy: str
     code_sketch: str = ""
     provenance: str = ""
+    source_xy: str = ""          # "x,y" when tagged by the tiling runner; "" = location-agnostic
 
     @classmethod
     def from_proposed(cls, p: ProposedSkill, provenance: str) -> "Skill":
@@ -30,6 +31,8 @@ class Skill:
 
 def render_skill(s: Skill) -> str:
     parts = [f"# {s.name}", f"category: {s.category}"]
+    if s.source_xy:
+        parts.append(f"source_xy: {s.source_xy}")
     for key in _SECTIONS:
         parts += [f"## {_TITLES[key]}", getattr(s, key)]
     return "\n\n".join(parts) + "\n"
@@ -38,6 +41,8 @@ def render_skill(s: Skill) -> str:
 def parse_skill(text: str) -> Skill:
     name = re.search(r"^# (.+)$", text, re.M).group(1).strip()
     category = re.search(r"^category: (.+)$", text, re.M).group(1).strip()
+    m_xy = re.search(r"^source_xy: (.+)$", text, re.M)
+    source_xy = m_xy.group(1).strip() if m_xy else ""
     # Locate each known section header positionally: search for each header only
     # after the previous one, so an in-field "## ..." line can't be mistaken for
     # the next header unless it exactly matches one of the remaining known titles.
@@ -55,7 +60,7 @@ def parse_skill(text: str) -> Skill:
             continue
         nxt = next((p.start() for _, p in positions[i + 1:] if p), len(text))
         fields[key] = text[m.end():nxt].strip()
-    return Skill(name=name, category=category, **fields)
+    return Skill(name=name, category=category, source_xy=source_xy, **fields)
 
 
 def _slug(name: str) -> str:
