@@ -18,13 +18,12 @@ Else H0 null = also a valid terminal result (report the pairwise p + attempts-to
 - Ping user ONLY at terminal state with ACTUAL pairwise Fisher p.
 
 ## State machine
-STATE: BUILD (subagent implementing 6-task plan; TDD; commit)
-NEXT: on build done+green -> pre-launch checks (proxy :8110, robosuite 1.4,
-      capx_bowl_xy.py live smoke) -> launch scripts/libero_tiling.sh in background
+STATE: RUNNING (build done 338 green, commits 49b94a5..77439b9; pre-launch OK: probe prints x,y, robosuite 1.4, proxy up)
+NEXT: on completion -> analyze_libero_tiling.py --heldout 3,6,8 -> pairwise Fisher p -> verdict -> commit + PING
 
 ## Decision log
 - 2026-07-24: 3-arm design (warm_geo/warm_dumpall/cold), Standard tier (3 held-out
   x N=5), test t=2, geometry retrieval added to aspire (contained). Loop armed.
 
 ## Attempt log
-(empty)
+- launched 2026-07-24; 3 arms x N=5 x heldout {3,6,8}, t=2; tiled lib from ACCUM {0,1,2,4,5,7,9}; root=~/aspire_runs/libero_tiling
