@@ -42,7 +42,7 @@ run_one() {
     return
   fi
   mkdir -p "$task" "$out"; cp "$BASELINE" "$task/code.py"
-  MUJOCO_GL=egl PATH="$HOME/.local/bin:$PATH" python3 -m aspire.run \
+  env -u ANTHROPIC_API_KEY MUJOCO_GL=egl PATH="$HOME/.local/bin:$PATH" python3 -m aspire.run \
     --task-dir "$task" --engine capx --capx-cmd "$capxcmd" \
     --out-root "$out" --library "$lib" --s-dbg 0 --s-val 100 --t "$t" \
     2>&1 | tee "$rdir/log.txt" | tail -1 > "$rdir/summary.json"
