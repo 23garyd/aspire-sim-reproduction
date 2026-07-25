@@ -31,3 +31,7 @@ NEXT: on completion -> analyze_libero_tiling.py --heldout 3,6,8 -> pairwise Fish
   which would make source_xy unparseable -> geometry retrieval falls back to stock -> Arm B == Arm A (experiment ruined).
   Fix (committed): bowl_xy pipes probe through tail -1 + validates num,num, aborts otherwise. Root nuked, relaunched clean.
 - relaunched as bash ba6et70xi with fixed runner.
+- Phase 1 DONE: tile gate PASSED — 8 tagged skills from 3 DISTINCT locations
+  (spatial_1 @0.47648,0.31660 adm3; spatial_7 @0.39434,-0.14527 adm2; spatial_9 @0.68843,-0.28180 adm3).
+  spatial_0/2/4/5 adm0. Library genuinely tiles -> coverage/retrieval hypotheses are testable.
+- Phase 3 RUNNING: 3 arms (warm_geo/warm_dumpall/cold) N=5 t=2 on heldout {3,6,8} (45 runs).
