@@ -163,3 +163,17 @@
 [06:42:48] START test/10_3/cold/9
 [06:49:12] DONE test/10_3/warm_dumpall/3 rc=0 2780s
 [06:52:53] DONE test/10_6/warm_dumpall/8 rc=0 4106s
+[07:13:36] DONE test/10_3/cold/5 rc=0 2595s
+[07:44:11] DONE test/10_3/cold/9 rc=0 3682s
+[07:44:11] all cells DONE (analysis skipped) root=/home/demo/aspire_runs/libero_hard
+[07:44:11] leaving API-server holder alive (pid 2242332); kill with: pkill -g 2242332
+[wrapper] stage 2: warm_geo on 10_3 only (bowl anchor exists there)
+[07:44:11] campaign: root=/home/demo/aspire_runs/libero_hard suite=libero_10 prefix=10 tasks=[3] reps=10 arms=['warm_geo'] t=2 lib=/home/demo/aspire_runs/libero_tiling/tiled_library
+[07:44:11] 9 cells DONE, 1 to schedule, jobs=4
+[07:44:11] server holder pid=2427604 up, ports pending=none
+[07:44:11] START test/10_3/warm_geo/10
+[08:31:30] DONE test/10_3/warm_geo/10 rc=0 2839s
+[08:31:30] all cells DONE (analysis skipped) root=/home/demo/aspire_runs/libero_hard
+[08:31:30] leaving API-server holder alive (pid 2427604); kill with: pkill -g 2427604
+[wrapper] analysis
+[wrapper] HARD CAMPAIGN DONE root=/home/demo/aspire_runs/libero_hard

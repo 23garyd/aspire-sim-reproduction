@@ -65,3 +65,46 @@ Across all four campaigns the finding is stable and, taken together, informative
   a banked skill can unlock. LIBERO-spatial at t=2 doesn't provide that. The honest next
   step is a harder task distribution (e.g. libero_10 / longer-horizon tasks) where cold's
   success rate is well below ceiling — not more N on this family.
+
+## Harder-distribution follow-up (libero_10, root ~/aspire_runs/libero_hard)
+
+The harder-distribution step above was executed (prior session; handoff in
+`HANDOFF-HARDER-CAMPAIGN.md`). Design: warm_dumpall vs cold on 10_0, 10_6 (middle
+band) + 10_3 (floor; the only libero_10 task whose scene contains a bowl), 10 reps/arm
+at t=2; warm_geo on 10_3 only. Library = this campaign's tiled library. Numbers below
+were re-derived from the raw per-cell summaries and the Fisher p recomputed here, not
+taken on trust from the handoff.
+
+**Pre-registered metric (dbg-solved) -> H0**, and confounded: `analysis.log` aggregates
+warm_geo (which ran only on the hardest floor task) against mixed-task arms, and scores
+the debug seed, not held-out validation. Aggregate: warm_geo 0.10, warm_dumpall 0.33,
+cold 0.40; no pair p<0.10.
+
+**Post-hoc, on held-out validation (val_score >= 0.5) -- the first positive signal in
+the series:**
+
+| task | warm_dumpall val | cold val | note |
+|------|------------------|----------|------|
+| 10_0 (middle) | 4/10 | 1/10 | cold dbg 9/10 but val 1/10 -> cold OVERFITS the debug seed |
+| 10_6 (middle) | 4/10 | 0/10 | Fisher p = 0.087 |
+| 10_3 (floor)  | 0/10 (geo 0/10) | 1/10 | unsolvable for every arm |
+| pooled 10_0+10_6 | 8/20 | 1/20 | Fisher p = 0.0197 |
+
+**Reading (with caveats):** on middle-band harder tasks -- where cold has headroom and
+generalization is measured on a held-out seed rather than the debug seed -- the
+accumulated library flips to decisively helpful: warm_dumpall generalizes (val 8/20)
+where cold overfits (val 1/20). This is the first place accumulation shows real value.
+Caveats that keep it honest: (1) it is POST-HOC on val, not the pre-registered dbg
+metric; (2) significance rests on a 2-task pool -- 10_6 alone p=0.087, 10_0 alone
+p=0.30; (3) floor tasks stay unsolvable for all arms; (4) warm_geo is BOWL-ANCHOR
+limited -- only 10_3 has a bowl, so ASPIRE_TARGET_XY is undefined on every other
+libero_10 task and geometry retrieval as implemented does not transfer beyond bowl
+scenes. A confirmatory run would pre-register val_score on middle-band tasks and widen
+the pool.
+
+**Methodology note (matters for validity):** during this campaign a bug in
+`ActorReport.load` (strict kwargs rejected the actor's extra `provenance` key) crashed
+whole runs; because warm arms emit skills more often it SELECTIVELY SUPPRESSED THE
+LIBRARY ARMS -- biasing against exactly the effect of interest. Fixed
+(`aspire/schemas.py` filters unknown keys; regression test rewritten to assert the
+tolerance); affected cells were reset and re-run before the numbers above.

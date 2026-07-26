@@ -3,7 +3,7 @@ and scripts/capx_execute.py; change it only with a test change."""
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 
 
 @dataclass(frozen=True)
@@ -107,8 +107,14 @@ class ActorReport:
         if data["outcome"] not in ("success", "fail"):
             raise ReportError(f"bad outcome: {data['outcome']!r}")
         try:
-            skills = tuple(ProposedSkill(**s) for s in data.get("proposed_skills", []))
-        except TypeError as e:
+            # Tolerate extra keys the actor invents (e.g. "provenance") — keep
+            # only known ProposedSkill fields instead of failing the whole run.
+            known = {f.name for f in fields(ProposedSkill)}
+            skills = tuple(
+                ProposedSkill(**{k: v for k, v in s.items() if k in known})
+                for s in data.get("proposed_skills", [])
+            )
+        except (TypeError, AttributeError) as e:
             raise ReportError(f"bad proposed_skill entry: {e}") from e
         try:
             debug_validation_rate = float(data.get("debug_validation_rate", -1.0))

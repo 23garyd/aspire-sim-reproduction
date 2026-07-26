@@ -12,12 +12,12 @@ from analyze_libero_accumulation import attempts_to_solve      # attempts_to_sol
 ARMS = ("warm_geo", "warm_dumpall", "cold")
 
 
-def read_arm_rows(root, heldout_tasks):
+def read_arm_rows(root, heldout_tasks, prefix="spatial"):
     root = Path(root)
     rows = []
     for tid in heldout_tasks:
         for arm in ARMS:
-            base = root / "test" / f"spatial_{tid}" / arm
+            base = root / "test" / f"{prefix}_{tid}" / arm
             if not base.is_dir():
                 continue
             for rep_dir in sorted(base.glob("*")):
@@ -27,7 +27,7 @@ def read_arm_rows(root, heldout_tasks):
                 s = json.loads(sfile.read_text())
                 solved = float(s.get("dbg_score", 0)) >= 1.0
                 att = attempts_to_solve(rep_dir / "exec", theta=1.0)
-                rows.append({"task": f"spatial_{tid}", "arm": arm,
+                rows.append({"task": f"{prefix}_{tid}", "arm": arm,
                              "solved": solved, "attempts": att})
     return rows
 
@@ -46,8 +46,8 @@ def _pair_p(arm_rows_x, arm_rows_y):
     return fisher_exact_2x2(a, b, c, d)
 
 
-def build_tiling_report(root, heldout_tasks):
-    rows = read_arm_rows(root, heldout_tasks)
+def build_tiling_report(root, heldout_tasks, prefix="spatial"):
+    rows = read_arm_rows(root, heldout_tasks, prefix)
     by_arm = {arm: [r for r in rows if r["arm"] == arm] for arm in ARMS}
     arms = {arm: _agg(by_arm[arm]) for arm in ARMS}
     pairwise = {
@@ -57,7 +57,7 @@ def build_tiling_report(root, heldout_tasks):
     }
     by_task = {}
     for tid in heldout_tasks:
-        t = f"spatial_{tid}"
+        t = f"{prefix}_{tid}"
         by_task[t] = {arm: _agg([r for r in by_arm[arm] if r["task"] == t]) for arm in ARMS}
     verdict = _verdict(arms, pairwise)
     return {"arms": arms, "pairwise": pairwise, "by_task": by_task,
@@ -87,9 +87,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True)
     ap.add_argument("--heldout", required=True, help="comma-separated task ids, e.g. 3,6,8")
+    ap.add_argument("--prefix", default="spatial")
     args = ap.parse_args()
     heldout = args.heldout.split(",")
-    rep = build_tiling_report(args.root, heldout)
+    rep = build_tiling_report(args.root, heldout, args.prefix)
     (Path(args.root) / "results.json").write_text(json.dumps(rep, indent=1))
     for arm in ARMS:
         a = rep["arms"][arm]

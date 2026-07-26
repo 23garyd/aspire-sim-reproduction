@@ -65,14 +65,20 @@ def test_actor_report_bad_skill_entry_raises(tmp_path):
         ActorReport.load(p)
 
 
-def test_actor_report_unknown_skill_key_raises(tmp_path):
+def test_actor_report_unknown_skill_key_is_ignored(tmp_path):
+    # The repair actor sometimes emits extra keys on a proposed skill (e.g.
+    # "provenance"). These MUST be filtered, not crash the whole run — an
+    # unknown-key TypeError here previously failed entire runs and, because the
+    # warm (library) arms emit skills more often, selectively biased them.
     p = tmp_path / "report.json"
     p.write_text(json.dumps({"outcome": "fail", "diagnosis": "x", "code_path": "c.py",
                              "proposed_skills": [{"name": "n", "category": "c",
                                                   "failure_signature": "f", "when_to_apply": "w",
                                                   "strategy": "s", "bogus": 1}]}))
-    with pytest.raises(ReportError, match="proposed_skill"):
-        ActorReport.load(p)
+    r = ActorReport.load(p)
+    assert r.proposed_skills[0].name == "n"
+    assert r.proposed_skills[0].category == "c"
+    assert not hasattr(r.proposed_skills[0], "bogus")  # unknown key dropped, not leaked
 
 
 def test_actor_report_optional_appendix_fields(tmp_path):
