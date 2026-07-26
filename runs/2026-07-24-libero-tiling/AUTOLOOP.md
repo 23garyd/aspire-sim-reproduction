@@ -18,8 +18,7 @@ Else H0 null = also a valid terminal result (report the pairwise p + attempts-to
 - Ping user ONLY at terminal state with ACTUAL pairwise Fisher p.
 
 ## State machine
-STATE: RUNNING (build done 338 green, commits 49b94a5..77439b9; pre-launch OK: probe prints x,y, robosuite 1.4, proxy up)
-NEXT: on completion -> analyze_libero_tiling.py --heldout 3,6,8 -> pairwise Fisher p -> verdict -> commit + PING
+STATE: DONE (terminal). 45/45. H0 null all pairs: warm_geo 0.93 == cold 0.93 (p=1.0), warm_dumpall 0.80 (p(B,A)=0.60). Geometry retrieval avoids neg-transfer (=cold), doesn't beat cold (t=2 ceiling). Loop stopped.
 
 ## Decision log
 - 2026-07-24: 3-arm design (warm_geo/warm_dumpall/cold), Standard tier (3 held-out
@@ -34,7 +33,10 @@ NEXT: on completion -> analyze_libero_tiling.py --heldout 3,6,8 -> pairwise Fish
 - Phase 1 DONE: tile gate PASSED — 8 tagged skills from 3 DISTINCT locations
   (spatial_1 @0.47648,0.31660 adm3; spatial_7 @0.39434,-0.14527 adm2; spatial_9 @0.68843,-0.28180 adm3).
   spatial_0/2/4/5 adm0. Library genuinely tiles -> coverage/retrieval hypotheses are testable.
-- Phase 3 RUNNING: 3 arms (warm_geo/warm_dumpall/cold) N=5 t=2 on heldout {3,6,8} (45 runs).
+- Phase 3 DONE (45/45): warm_geo 14/15 (0.93), warm_dumpall 12/15 (0.80), cold 14/15 (0.93).
+  Fisher p(B,C)=1.0, p(B,A)=0.60, p(A,C)=0.60 -> H0 null all pairs. geo==cold (avoids neg-transfer,
+  no coverage gain); dumpall<cold (mild neg-transfer). geo FIXED frontier spatial_6 neg-transfer (2/5->5/5).
+  Binding constraint = task family (cold solves at t=2); next = harder distribution (libero_10). See FINDINGS.md.
 - ANOMALY (2026-07-25 ~10:37): my sequential task ba6et70xi died (exit 144); an UNTRACKED parallel
   runner scripts/libero_tiling_parallel.py (--jobs 6, NOT created by me — appeared in shared env) took over.
   INTEGRITY VERIFIED: it faithfully mirrors run_one (sets ASPIRE_RETRIEVAL=geometry+TARGET_XY only for warm_geo,

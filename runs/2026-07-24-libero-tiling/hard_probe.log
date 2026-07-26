@@ -1,0 +1,25 @@
+[15:10:20] campaign: root=/home/demo/aspire_runs/libero_hard suite=libero_10 prefix=10 tasks=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] reps=1 arms=['cold'] t=2 lib=/home/demo/aspire_runs/libero_hard/tiled_library
+[15:10:20] 0 cells DONE, 10 to schedule, jobs=4
+[15:10:20] server holder pid=851731 up, ports pending=none
+[15:10:20] START test/10_0/cold/1
+[15:10:40] START test/10_1/cold/1
+[15:11:00] START test/10_2/cold/1
+[15:11:20] START test/10_3/cold/1
+[15:28:54] DONE test/10_0/cold/1 rc=0 1114s
+[15:28:54] START test/10_4/cold/1
+[15:32:33] DONE test/10_2/cold/1 rc=0 1293s
+[15:32:33] START test/10_5/cold/1
+[15:55:09] DONE test/10_3/cold/1 rc=0 2629s
+[15:55:09] START test/10_6/cold/1
+[16:08:23] DONE test/10_1/cold/1 rc=0 3463s
+[16:08:23] START test/10_7/cold/1
+[16:10:49] DONE test/10_4/cold/1 rc=0 2515s
+[16:10:49] START test/10_8/cold/1
+[16:16:14] DONE test/10_5/cold/1 rc=0 2620s
+[16:16:14] START test/10_9/cold/1
+[16:26:48] DONE test/10_7/cold/1 rc=0 1105s
+[16:38:10] DONE test/10_6/cold/1 rc=0 2580s
+[16:54:38] DONE test/10_8/cold/1 rc=0 2628s
+[17:07:49] DONE test/10_9/cold/1 rc=0 3095s
+[17:07:49] all cells DONE (analysis skipped) root=/home/demo/aspire_runs/libero_hard
+[17:07:49] leaving API-server holder alive (pid 851731); kill with: pkill -g 851731

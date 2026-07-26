@@ -1,0 +1,362 @@
+{
+ "arms": {
+  "warm_geo": {
+   "n": 15,
+   "n_solved": 14,
+   "success_rate": 0.9333333333333333,
+   "mean_attempts_solved_only": 2.2142857142857144
+  },
+  "warm_dumpall": {
+   "n": 15,
+   "n_solved": 12,
+   "success_rate": 0.8,
+   "mean_attempts_solved_only": 2.8333333333333335
+  },
+  "cold": {
+   "n": 15,
+   "n_solved": 14,
+   "success_rate": 0.9333333333333333,
+   "mean_attempts_solved_only": 2.2142857142857144
+  }
+ },
+ "pairwise": {
+  "B_vs_C": 1.0,
+  "B_vs_A": 0.5977011494252873,
+  "A_vs_C": 0.5977011494252873
+ },
+ "by_task": {
+  "spatial_3": {
+   "warm_geo": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.0
+   },
+   "warm_dumpall": {
+    "n": 5,
+    "n_solved": 3,
+    "success_rate": 0.6,
+    "mean_attempts_solved_only": 2.0
+   },
+   "cold": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.0
+   }
+  },
+  "spatial_6": {
+   "warm_geo": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.0
+   },
+   "warm_dumpall": {
+    "n": 5,
+    "n_solved": 4,
+    "success_rate": 0.8,
+    "mean_attempts_solved_only": 4.5
+   },
+   "cold": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.6
+   }
+  },
+  "spatial_8": {
+   "warm_geo": {
+    "n": 5,
+    "n_solved": 4,
+    "success_rate": 0.8,
+    "mean_attempts_solved_only": 2.75
+   },
+   "warm_dumpall": {
+    "n": 5,
+    "n_solved": 5,
+    "success_rate": 1.0,
+    "mean_attempts_solved_only": 2.0
+   },
+   "cold": {
+    "n": 5,
+    "n_solved": 4,
+    "success_rate": 0.8,
+    "mean_attempts_solved_only": 2.0
+   }
+  }
+ },
+ "rows": [
+  {
+   "task": "spatial_3",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": null
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": null
+  },
+  {
+   "task": "spatial_3",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_3",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 9
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 5
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": null
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 5
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_geo",
+   "solved": false,
+   "attempts": null
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 5
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_geo",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "solved": false,
+   "attempts": null
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  },
+  {
+   "task": "spatial_8",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2
+  }
+ ],
+ "verdict": "H0 (null, N=5/arm/task): no arm pair separated at p<0.10 (warm_geo 0.93, warm_dumpall 0.80, cold 0.93; p(B,C)=1.0000, p(B,A)=0.5977)."
+}

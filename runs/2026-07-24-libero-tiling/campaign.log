@@ -1,0 +1,8 @@
+=== PHASE 0: preflight + config gen ===
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /home/demo/cap-x/capx/third_party/libero_dependencies/robosuite/robosuite/scripts/setup_macros.py (__init__.py:9)
+=== PHASE 1: tile-accumulate deeper baseline on {0 1 2 4 5 7 9} at --t 5 -> /home/demo/aspire_runs/libero_tiling/tiled_library ===
+=== tiled library: 8 tagged skills from 3 distinct locations ===
+=== PHASE 2: fixed held-out tasks = 3 6 8 ===
+=== PHASE 3: three arms (warm_geo / warm_dumpall / cold), 5/arm, --t 2 ===

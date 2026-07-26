@@ -1,0 +1,109 @@
+[10:38:27] 21 cells DONE, 24 to schedule, jobs=6
+[10:38:49] server holder pid=262599 up, ports pending=none
+[10:38:49] computing bowl_xy for task 8 (not cached)
+[10:39:06] external in-flight: test/spatial_6/warm_geo/3 (pid 224510) — will finalize on exit
+[10:39:06] START test/spatial_6/warm_dumpall/3
+[10:39:26] START test/spatial_6/cold/3
+[10:39:46] START test/spatial_6/warm_geo/4
+[10:40:06] START test/spatial_6/warm_dumpall/4
+[10:40:26] START test/spatial_6/cold/4
+[10:40:46] START test/spatial_6/warm_geo/5
+[10:50:37] DONE test/spatial_6/warm_geo/3 (external run finished)
+[10:52:44] DONE test/spatial_6/cold/3 rc=0 797s
+[10:52:44] START test/spatial_6/warm_dumpall/5
+[10:52:55] DONE test/spatial_6/warm_geo/5 rc=0 728s
+[10:52:55] START test/spatial_6/cold/5
+[11:02:09] 24 cells DONE, 21 to schedule, jobs=8
+[11:02:09] server holder pid=338522 up, ports pending=none
+[11:02:09] external in-flight: test/spatial_6/warm_dumpall/3 (pid 266011) — will finalize on exit
+[11:02:09] external in-flight: test/spatial_6/warm_geo/4 (pid 268175) — will finalize on exit
+[11:02:09] external in-flight: test/spatial_6/warm_dumpall/4 (pid 269855) — will finalize on exit
+[11:02:09] external in-flight: test/spatial_6/cold/4 (pid 271936) — will finalize on exit
+[11:02:09] external in-flight: test/spatial_6/warm_dumpall/5 (pid 308654) — will finalize on exit
+[11:02:09] external in-flight: test/spatial_6/cold/5 (pid 309105) — will finalize on exit
+[11:02:18] DONE test/spatial_6/cold/4 rc=0 1311s
+[11:02:18] START test/spatial_8/warm_geo/1
+[11:02:39] DONE test/spatial_6/cold/4 (external run finished)
+[11:04:15] DONE test/spatial_6/cold/5 rc=0 680s
+[11:04:15] START test/spatial_8/warm_dumpall/1
+[11:04:39] DONE test/spatial_6/cold/5 (external run finished)
+[11:05:29] DONE test/spatial_6/warm_dumpall/3 rc=2 1582s
+[11:05:29] START test/spatial_8/cold/1
+[11:05:39] DONE test/spatial_6/warm_dumpall/3 (external run finished)
+[11:06:08] 27 cells DONE, 18 to schedule, jobs=8
+[11:06:08] server holder pid=352140 up, ports pending=none
+[11:06:08] external in-flight: test/spatial_6/warm_geo/4 (pid 268175) — will finalize on exit
+[11:06:08] external in-flight: test/spatial_6/warm_dumpall/4 (pid 269855) — will finalize on exit
+[11:06:08] external in-flight: test/spatial_6/warm_dumpall/5 (pid 308654) — will finalize on exit
+[11:06:08] external in-flight: test/spatial_8/warm_geo/1 (pid 339209) — will finalize on exit
+[11:06:08] external in-flight: test/spatial_8/warm_dumpall/1 (pid 345122) — will finalize on exit
+[11:06:08] external in-flight: test/spatial_8/cold/1 (pid 349147) — will finalize on exit
+[11:06:08] START test/spatial_8/warm_geo/2
+[11:06:23] START test/spatial_8/warm_dumpall/2
+[11:06:38] START test/spatial_8/cold/2
+[11:06:53] START test/spatial_8/warm_geo/3
+[11:07:08] START test/spatial_8/warm_dumpall/3
+[11:07:23] START test/spatial_8/cold/3
+[11:07:38] START test/spatial_8/warm_geo/4
+[11:07:53] START test/spatial_8/warm_dumpall/4
+[11:14:09] DONE test/spatial_6/warm_geo/4 (external run finished)
+[11:19:18] DONE test/spatial_8/warm_dumpall/2 rc=0 774s
+[11:19:18] START test/spatial_8/cold/4
+[11:20:40] DONE test/spatial_8/warm_dumpall/1 (external run finished)
+[11:23:16] DONE test/spatial_8/warm_dumpall/4 rc=0 922s
+[11:23:16] START test/spatial_8/warm_geo/5
+[11:23:41] DONE test/spatial_8/warm_dumpall/3 rc=0 992s
+[11:23:41] START test/spatial_8/warm_dumpall/5
+[11:25:55] DONE test/spatial_8/cold/2 rc=0 1156s
+[11:25:55] START test/spatial_8/cold/5
+[11:27:03] DONE test/spatial_8/warm_geo/5 rc=2 227s
+[11:27:11] DONE test/spatial_8/warm_geo/3 rc=2 1217s
+[11:27:28] DONE test/spatial_8/warm_geo/4 rc=2 1189s
+[11:27:30] DONE test/spatial_8/cold/5 rc=2 95s
+[11:27:38] DONE test/spatial_8/warm_geo/2 rc=2 1289s
+[11:27:38] DONE test/spatial_8/cold/4 rc=2 500s
+[11:27:39] DONE test/spatial_8/warm_dumpall/5 rc=2 238s
+[11:27:41] DONE test/spatial_6/warm_dumpall/4 (external run finished)
+[11:27:41] DONE test/spatial_6/warm_dumpall/5 (external run finished)
+[11:27:41] DONE test/spatial_8/cold/1 (external run finished)
+[11:29:41] DONE test/spatial_8/warm_geo/1 (external run finished)
+[11:31:49] signal 15: stopping (claims released, running cells keep their logs)
+[11:31:49] ABORTED test/spatial_8/cold/3 (stop requested)
+[11:31:49] exiting with 1 cells not DONE
+[11:31:49] leaving API-server holder alive (pid 352140); kill with: pkill -g 352140
+[11:33:54] 33 cells DONE, 12 to schedule, jobs=4
+[11:34:22] server holder pid=457177 up, ports pending=none
+[11:34:22] START test/spatial_6/warm_dumpall/4
+[11:34:42] START test/spatial_6/warm_dumpall/5
+[11:35:02] START test/spatial_8/warm_geo/1
+[11:35:23] START test/spatial_8/cold/1
+[11:58:38] DONE test/spatial_6/warm_dumpall/4 rc=0 1455s
+[11:58:38] START test/spatial_8/warm_geo/2
+[12:06:18] DONE test/spatial_6/warm_dumpall/5 rc=0 1895s
+[12:06:18] START test/spatial_8/warm_geo/3
+[12:09:07] DONE test/spatial_8/cold/1 rc=0 2024s
+[12:09:07] START test/spatial_8/cold/3
+[12:09:40] DONE test/spatial_8/warm_geo/2 rc=0 662s
+[12:09:40] START test/spatial_8/warm_geo/4
+[12:21:25] DONE test/spatial_8/warm_geo/3 rc=0 907s
+[12:21:25] START test/spatial_8/cold/4
+[12:42:37] DONE test/spatial_8/warm_geo/1 rc=0 4054s
+[12:42:37] START test/spatial_8/warm_geo/5
+[12:44:11] DONE test/spatial_8/cold/4 rc=0 1365s
+[12:44:11] START test/spatial_8/warm_dumpall/5
+[12:54:13] DONE test/spatial_8/warm_geo/4 rc=0 2672s
+[12:54:13] START test/spatial_8/cold/5
+[12:55:59] DONE test/spatial_8/warm_dumpall/5 rc=0 707s
+[13:04:19] DONE test/spatial_8/cold/3 rc=0 3311s
+[13:07:11] DONE test/spatial_8/warm_geo/5 rc=0 1474s
+[13:15:34] DONE test/spatial_8/cold/5 rc=0 1280s
+[13:15:34] all cells DONE -> Phase 4 analysis
+[13:15:34] TILING CAMPAIGN DONE root=/home/demo/aspire_runs/libero_tiling (analysis in /home/demo/aspire_runs/libero_tiling/analysis.log)
+[13:15:34] leaving API-server holder alive (pid 457177); kill with: pkill -g 457177
+[13:17:26] 44 cells DONE, 1 to schedule, jobs=1
+[13:17:26] server holder pid=682148 up, ports pending=none
+[13:17:26] START test/spatial_6/warm_dumpall/3
+[14:08:38] DONE test/spatial_6/warm_dumpall/3 rc=0 3072s
+[14:08:38] all cells DONE -> Phase 4 analysis
+[14:08:38] TILING CAMPAIGN DONE root=/home/demo/aspire_runs/libero_tiling (analysis in /home/demo/aspire_runs/libero_tiling/analysis.log)
+[14:08:38] leaving API-server holder alive (pid 682148); kill with: pkill -g 682148

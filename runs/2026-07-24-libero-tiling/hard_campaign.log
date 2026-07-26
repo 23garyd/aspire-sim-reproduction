@@ -1,0 +1,165 @@
+[wrapper] stage 1: warm_dumpall+cold on 10_0, 10_6, 10_3 (10 reps)
+[17:11:39] campaign: root=/home/demo/aspire_runs/libero_hard suite=libero_10 prefix=10 tasks=[0, 6, 3] reps=10 arms=['warm_dumpall', 'cold'] t=2 lib=/home/demo/aspire_runs/libero_tiling/tiled_library
+[17:11:39] 3 cells DONE, 57 to schedule, jobs=4
+[17:11:39] server holder pid=1114852 up, ports pending=none
+[17:11:39] START test/10_0/warm_dumpall/1
+[17:11:59] START test/10_0/warm_dumpall/2
+[17:12:19] START test/10_0/cold/2
+[17:12:39] START test/10_0/warm_dumpall/3
+[17:30:51] DONE test/10_0/cold/2 rc=0 1112s
+[17:30:51] START test/10_0/cold/3
+[17:57:32] DONE test/10_0/cold/3 rc=0 1600s
+[17:57:32] START test/10_0/warm_dumpall/4
+[17:58:53] DONE test/10_0/warm_dumpall/2 rc=0 2814s
+[17:58:53] START test/10_0/cold/4
+[18:04:57] DONE test/10_0/warm_dumpall/3 rc=0 3138s
+[18:04:57] START test/10_0/warm_dumpall/5
+[18:28:03] DONE test/10_0/warm_dumpall/5 rc=0 1385s
+[18:28:03] START test/10_0/cold/5
+[18:29:09] DONE test/10_0/cold/4 rc=0 1815s
+[18:29:09] START test/10_0/warm_dumpall/6
+[18:32:32] DONE test/10_0/warm_dumpall/1 rc=0 4853s
+[18:32:32] START test/10_0/cold/6
+[18:44:47] DONE test/10_0/warm_dumpall/6 rc=2 937s
+[18:44:47] START test/10_0/warm_dumpall/7
+[18:47:12] DONE test/10_0/cold/5 rc=0 1148s
+[18:47:12] START test/10_0/cold/7
+[18:51:47] DONE test/10_0/cold/6 rc=0 1154s
+[18:51:47] START test/10_0/warm_dumpall/8
+[19:10:03] DONE test/10_0/cold/7 rc=0 1371s
+[19:10:03] START test/10_0/cold/8
+[19:10:48] DONE test/10_0/warm_dumpall/7 rc=0 1561s
+[19:10:48] START test/10_0/warm_dumpall/9
+[19:23:37] DONE test/10_0/warm_dumpall/4 rc=0 5165s
+[19:23:37] START test/10_0/cold/9
+[19:39:06] DONE test/10_0/warm_dumpall/8 rc=0 2838s
+[19:39:06] START test/10_0/warm_dumpall/10
+[19:45:47] DONE test/10_0/cold/9 rc=0 1329s
+[19:45:47] START test/10_0/cold/10
+[19:47:38] DONE test/10_0/warm_dumpall/9 rc=0 2210s
+[19:47:38] START test/10_6/warm_dumpall/1
+[19:53:04] DONE test/10_0/cold/8 rc=0 2580s
+[19:53:04] START test/10_6/warm_dumpall/2
+[19:56:10] DONE test/10_6/warm_dumpall/1 rc=2 511s
+[19:56:10] START test/10_6/cold/2
+[20:16:48] DONE test/10_6/warm_dumpall/2 rc=2 1424s
+[20:16:48] START test/10_6/warm_dumpall/3
+[20:25:22] DONE test/10_0/warm_dumpall/10 rc=0 2775s
+[20:25:22] START test/10_6/cold/3
+[20:30:17] DONE test/10_0/cold/10 rc=0 2670s
+[20:30:17] START test/10_6/warm_dumpall/4
+[20:43:20] DONE test/10_6/cold/2 rc=0 2829s
+[20:43:20] START test/10_6/cold/4
+[21:02:35] DONE test/10_6/cold/3 rc=0 2233s
+[21:02:35] START test/10_6/warm_dumpall/5
+[21:07:13] DONE test/10_6/warm_dumpall/3 rc=0 3024s
+[21:07:13] START test/10_6/cold/5
+[21:18:45] DONE test/10_6/warm_dumpall/4 rc=0 2907s
+[21:18:45] START test/10_6/warm_dumpall/6
+[21:30:17] DONE test/10_6/cold/4 rc=0 2817s
+[21:30:17] START test/10_6/cold/6
+[21:49:09] DONE test/10_6/cold/5 rc=0 2515s
+[21:49:09] START test/10_6/warm_dumpall/7
+[21:49:31] DONE test/10_6/warm_dumpall/5 rc=0 2816s
+[21:49:31] START test/10_6/cold/7
+[22:09:18] DONE test/10_6/cold/6 rc=0 2341s
+[22:09:18] START test/10_6/warm_dumpall/8
+[22:12:26] DONE test/10_6/warm_dumpall/6 rc=0 3220s
+[22:12:26] START test/10_6/cold/8
+[22:15:11] DONE test/10_6/warm_dumpall/7 rc=0 1562s
+[22:15:11] START test/10_6/warm_dumpall/9
+[22:27:34] DONE test/10_6/cold/7 rc=0 2282s
+[22:27:34] START test/10_6/cold/9
+[22:33:31] DONE test/10_6/warm_dumpall/8 rc=2 1452s
+[22:33:31] START test/10_6/warm_dumpall/10
+[23:03:45] DONE test/10_6/cold/9 rc=0 2171s
+[23:03:45] START test/10_6/cold/10
+[23:06:22] DONE test/10_6/cold/8 rc=0 3236s
+[23:06:22] START test/10_3/warm_dumpall/1
+[23:08:35] DONE test/10_6/warm_dumpall/9 rc=0 3203s
+[23:08:35] START test/10_3/warm_dumpall/2
+[23:15:01] DONE test/10_6/warm_dumpall/10 rc=0 2489s
+[23:15:01] START test/10_3/cold/2
+[23:50:37] DONE test/10_6/cold/10 rc=0 2811s
+[23:50:37] START test/10_3/warm_dumpall/3
+[23:53:33] DONE test/10_3/warm_dumpall/1 rc=0 2830s
+[23:53:33] START test/10_3/cold/3
+[00:04:46] DONE test/10_3/warm_dumpall/2 rc=0 3370s
+[00:04:46] START test/10_3/warm_dumpall/4
+[00:09:23] DONE test/10_3/cold/2 rc=0 3261s
+[00:09:23] START test/10_3/cold/4
+[00:11:41] DONE test/10_3/warm_dumpall/3 rc=2 1264s
+[00:11:41] START test/10_3/warm_dumpall/5
+[00:27:31] DONE test/10_3/cold/3 rc=0 2037s
+[00:27:31] START test/10_3/cold/5
+[00:52:19] PLANNER-FAIL test/10_3/cold/5 rc=2 (1/3 consecutive)
+[00:52:19] START test/10_3/warm_dumpall/6
+[00:52:49] DONE test/10_3/cold/4 rc=0 2606s
+[00:52:49] START test/10_3/cold/6
+[01:07:29] DONE test/10_3/warm_dumpall/4 rc=0 3763s
+[01:07:29] START test/10_3/warm_dumpall/7
+[01:10:47] DONE test/10_3/warm_dumpall/5 rc=0 3545s
+[01:10:47] START test/10_3/cold/7
+[01:42:12] DONE test/10_3/cold/6 rc=0 2962s
+[01:42:12] START test/10_3/warm_dumpall/8
+[01:50:17] DONE test/10_3/warm_dumpall/7 rc=0 2567s
+[01:50:17] START test/10_3/cold/8
+[01:52:03] DONE test/10_3/cold/7 rc=0 2476s
+[01:52:03] START test/10_3/warm_dumpall/9
+[02:23:29] DONE test/10_3/warm_dumpall/6 rc=0 5469s
+[02:23:29] START test/10_3/cold/9
+[02:32:51] DONE test/10_3/cold/8 rc=0 2554s
+[02:32:51] START test/10_3/warm_dumpall/10
+[02:33:08] DONE test/10_3/warm_dumpall/8 rc=0 3056s
+[02:33:08] START test/10_3/cold/10
+[02:46:29] PLANNER-FAIL test/10_3/cold/9 rc=2 (1/3 consecutive)
+[02:49:25] DONE test/10_3/warm_dumpall/9 rc=0 3441s
+[03:16:43] DONE test/10_3/cold/10 rc=0 2615s
+[03:23:29] DONE test/10_3/warm_dumpall/10 rc=0 3037s
+[03:23:29] exiting with 2 cells not DONE
+[03:23:29] leaving API-server holder alive (pid 1114852); kill with: pkill -g 1114852
+[wrapper] stage 2: warm_geo on 10_3 only (bowl anchor exists there)
+[03:23:29] campaign: root=/home/demo/aspire_runs/libero_hard suite=libero_10 prefix=10 tasks=[3] reps=10 arms=['warm_geo'] t=2 lib=/home/demo/aspire_runs/libero_tiling/tiled_library
+[03:23:29] 0 cells DONE, 10 to schedule, jobs=4
+[03:23:29] server holder pid=2050857 up, ports pending=none
+[03:23:29] computing bowl_xy for task 3 (not cached)
+[03:23:45] START test/10_3/warm_geo/1
+[03:24:05] START test/10_3/warm_geo/2
+[03:24:25] START test/10_3/warm_geo/3
+[03:24:45] START test/10_3/warm_geo/4
+[04:11:13] DONE test/10_3/warm_geo/2 rc=0 2827s
+[04:11:13] START test/10_3/warm_geo/5
+[04:12:56] DONE test/10_3/warm_geo/4 rc=0 2891s
+[04:12:56] START test/10_3/warm_geo/6
+[04:23:23] DONE test/10_3/warm_geo/1 rc=0 3577s
+[04:23:23] START test/10_3/warm_geo/7
+[04:47:13] DONE test/10_3/warm_geo/3 rc=0 4967s
+[04:47:13] START test/10_3/warm_geo/8
+[04:56:38] DONE test/10_3/warm_geo/5 rc=0 2724s
+[04:56:38] START test/10_3/warm_geo/9
+[05:00:21] DONE test/10_3/warm_geo/6 rc=0 2845s
+[05:00:21] START test/10_3/warm_geo/10
+[05:17:08] DONE test/10_3/warm_geo/7 rc=0 3225s
+[05:28:34] DONE test/10_3/warm_geo/10 rc=2 1692s
+[05:36:31] DONE test/10_3/warm_geo/8 rc=0 2958s
+[05:40:41] DONE test/10_3/warm_geo/9 rc=0 2643s
+[05:40:41] all cells DONE (analysis skipped) root=/home/demo/aspire_runs/libero_hard
+[05:40:41] leaving API-server holder alive (pid 2050857); kill with: pkill -g 2050857
+[wrapper] analysis
+[wrapper] HARD CAMPAIGN DONE root=/home/demo/aspire_runs/libero_hard
+[wrapper] stage 1: warm_dumpall+cold on 10_0, 10_6, 10_3 (10 reps)
+[05:43:27] campaign: root=/home/demo/aspire_runs/libero_hard suite=libero_10 prefix=10 tasks=[0, 6, 3] reps=10 arms=['warm_dumpall', 'cold'] t=2 lib=/home/demo/aspire_runs/libero_tiling/tiled_library
+[05:43:27] 53 cells DONE, 7 to schedule, jobs=4
+[05:43:27] server holder pid=2242332 up, ports pending=none
+[05:43:27] START test/10_0/warm_dumpall/6
+[05:43:47] START test/10_6/warm_dumpall/1
+[05:44:07] START test/10_6/warm_dumpall/2
+[05:44:27] START test/10_6/warm_dumpall/8
+[06:02:52] DONE test/10_0/warm_dumpall/6 rc=0 1165s
+[06:02:52] START test/10_3/warm_dumpall/3
+[06:30:21] DONE test/10_6/warm_dumpall/2 rc=0 2774s
+[06:30:21] START test/10_3/cold/5
+[06:42:48] DONE test/10_6/warm_dumpall/1 rc=0 3541s
+[06:42:48] START test/10_3/cold/9
+[06:49:12] DONE test/10_3/warm_dumpall/3 rc=0 2780s
+[06:52:53] DONE test/10_6/warm_dumpall/8 rc=0 4106s
