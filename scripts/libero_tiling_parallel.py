@@ -45,6 +45,7 @@ PREFIX = "spatial"
 HELDOUT_TASKS = [3, 6, 8]
 REPEATS = 5
 TEST_T = "2"
+S_VAL = "100"          # validation seed spec passed to aspire.run --s-val (override for val campaigns)
 ARMS = ["warm_geo", "warm_dumpall", "cold"]
 API_PORTS = [8114, 8115, 8116]
 XY_RE = re.compile(r"^-?[0-9]+(\.[0-9]+)?,-?[0-9]+(\.[0-9]+)?$")
@@ -208,7 +209,7 @@ def run_cell(cell, dry=False):
     cmd = ["python3", "-m", "aspire.run",
            "--task-dir", str(cell["task"]), "--engine", "capx",
            "--capx-cmd", capxcmd, "--out-root", str(cell["out"]),
-           "--library", str(cell["lib"]), "--s-dbg", "0", "--s-val", "100",
+           "--library", str(cell["lib"]), "--s-dbg", "0", "--s-val", S_VAL,
            "--t", TEST_T]
     log(f"START {cell['sub']}")
     t0 = time.time()
@@ -274,7 +275,7 @@ def start_server_holder():
 
 
 def main():
-    global ROOT, CFGDIR, TILED_LIB, XYDIR, SUITE, PREFIX, HELDOUT_TASKS, REPEATS, ARMS, TEST_T
+    global ROOT, CFGDIR, TILED_LIB, XYDIR, SUITE, PREFIX, HELDOUT_TASKS, REPEATS, ARMS, TEST_T, S_VAL
     ap = argparse.ArgumentParser()
     ap.add_argument("--jobs", type=int, default=6)
     ap.add_argument("--stagger", type=float, default=20.0,
@@ -290,6 +291,7 @@ def main():
     ap.add_argument("--arms", default=",".join(ARMS),
                     help="comma subset of warm_geo,warm_dumpall,cold")
     ap.add_argument("--t", default=TEST_T, help="aspire.run --t iterations")
+    ap.add_argument("--s-val", default=S_VAL, help="aspire.run --s-val seed spec (e.g. 200-204)")
     ap.add_argument("--library", default=None,
                     help="tiled library to copy for warm arms "
                          "(default: <root>/tiled_library)")
@@ -306,10 +308,11 @@ def main():
     REPEATS = args.reps
     ARMS = [a.strip() for a in args.arms.split(",") if a.strip()]
     TEST_T = str(args.t)
+    S_VAL = args.s_val
     TILED_LIB = Path(args.library) if args.library else ROOT / "tiled_library"
     ROOT.mkdir(parents=True, exist_ok=True)
     log(f"campaign: root={ROOT} suite={SUITE} prefix={PREFIX} "
-        f"tasks={HELDOUT_TASKS} reps={REPEATS} arms={ARMS} t={TEST_T} lib={TILED_LIB}")
+        f"tasks={HELDOUT_TASKS} reps={REPEATS} arms={ARMS} t={TEST_T} s_val={S_VAL} lib={TILED_LIB}")
 
     def on_signal(signum, _frame):
         log(f"signal {signum}: stopping (claims released, running cells keep their logs)")
