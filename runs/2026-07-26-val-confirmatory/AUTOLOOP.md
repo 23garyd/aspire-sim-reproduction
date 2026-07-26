@@ -19,13 +19,12 @@ result. Selection gate: >=2 overfit-band tasks or stop (honest null of selection
 - Ping user ONLY at terminal with ACTUAL val Fisher p.
 
 ## State machine
-STATE: BUILD (subagent implementing 4-task plan; TDD; commit)
-NEXT: on build done+green -> pre-launch (robosuite 1.4, tiled_library>=2 skills,
-      subscription serves claude -p) -> launch scripts/val_confirmatory_campaign.sh
+STATE: RUNNING (build done 344 green, commits 97b66c8..025ebce; pre-launch OK: robosuite 1.4, lib 8 skills, subscription SUBOK, dry clean)
+NEXT: on completion -> apply pre-registered val p<0.05 decision -> FINDINGS + commit -> PING
 
 ## Decision log
 - 2026-07-26: val primary (seeds 200-204), overfit-band selection on broad pool
   (incl. fresh libero_10 1,2,4,5,7,8,9), warm_dumpall vs cold N=10 t=2, p<0.05. Armed.
 
 ## Attempt log
-(empty)
+- launched 2026-07-26; PREREG frozen at 025ebce (before any test run); root=~/aspire_runs/libero_val_confirm
