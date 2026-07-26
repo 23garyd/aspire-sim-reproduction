@@ -12,7 +12,7 @@ from analyze_libero_accumulation import attempts_to_solve      # attempts_to_sol
 ARMS = ("warm_geo", "warm_dumpall", "cold")
 
 
-def read_arm_rows(root, heldout_tasks, prefix="spatial"):
+def read_arm_rows(root, heldout_tasks, prefix="spatial", metric="dbg"):
     root = Path(root)
     rows = []
     for tid in heldout_tasks:
@@ -25,10 +25,15 @@ def read_arm_rows(root, heldout_tasks, prefix="spatial"):
                 if not sfile.is_file():
                     continue
                 s = json.loads(sfile.read_text())
-                solved = float(s.get("dbg_score", 0)) >= 1.0
+                if metric == "val":
+                    solved = float(s.get("val_score", 0)) >= 0.5
+                else:
+                    solved = float(s.get("dbg_score", 0)) >= 1.0
                 att = attempts_to_solve(rep_dir / "exec", theta=1.0)
                 rows.append({"task": f"{prefix}_{tid}", "arm": arm,
-                             "solved": solved, "attempts": att})
+                             "solved": solved, "attempts": att,
+                             "val_score": float(s.get("val_score", 0)),
+                             "dbg_score": float(s.get("dbg_score", 0))})
     return rows
 
 
@@ -46,8 +51,8 @@ def _pair_p(arm_rows_x, arm_rows_y):
     return fisher_exact_2x2(a, b, c, d)
 
 
-def build_tiling_report(root, heldout_tasks, prefix="spatial"):
-    rows = read_arm_rows(root, heldout_tasks, prefix)
+def build_tiling_report(root, heldout_tasks, prefix="spatial", metric="dbg", alpha=0.10):
+    rows = read_arm_rows(root, heldout_tasks, prefix, metric)
     by_arm = {arm: [r for r in rows if r["arm"] == arm] for arm in ARMS}
     arms = {arm: _agg(by_arm[arm]) for arm in ARMS}
     pairwise = {
@@ -59,28 +64,27 @@ def build_tiling_report(root, heldout_tasks, prefix="spatial"):
     for tid in heldout_tasks:
         t = f"{prefix}_{tid}"
         by_task[t] = {arm: _agg([r for r in by_arm[arm] if r["task"] == t]) for arm in ARMS}
-    verdict = _verdict(arms, pairwise)
+    verdict = _verdict(arms, pairwise, alpha=alpha, metric=metric)
     return {"arms": arms, "pairwise": pairwise, "by_task": by_task,
-            "rows": rows, "verdict": verdict}
+            "rows": rows, "metric": metric, "alpha": alpha, "verdict": verdict}
 
 
-def _verdict(arms, pw):
-    b, a, c = arms["warm_geo"], arms["warm_dumpall"], arms["cold"]
-    lines = []
-    if b["success_rate"] > c["success_rate"] and pw["B_vs_C"] < 0.10:
-        lines.append(f"H1-COVERAGE reproduced (suggestive, N=5/arm/task): warm_geo "
-                     f"{b['success_rate']:.2f} > cold {c['success_rate']:.2f}, "
-                     f"Fisher p(B,C)={pw['B_vs_C']:.4f} < 0.10.")
-    if b["success_rate"] > a["success_rate"] and pw["B_vs_A"] < 0.10:
-        lines.append(f"H1-RETRIEVAL is the bottleneck (suggestive): warm_geo "
-                     f"{b['success_rate']:.2f} > warm_dumpall {a['success_rate']:.2f}, "
-                     f"Fisher p(B,A)={pw['B_vs_A']:.4f} < 0.10.")
-    if not lines:
-        lines.append(f"H0 (null, N=5/arm/task): no arm pair separated at p<0.10 "
-                     f"(warm_geo {b['success_rate']:.2f}, warm_dumpall "
-                     f"{a['success_rate']:.2f}, cold {c['success_rate']:.2f}; "
-                     f"p(B,C)={pw['B_vs_C']:.4f}, p(B,A)={pw['B_vs_A']:.4f}).")
-    return " ".join(lines)
+def _verdict(arms, pw, alpha=0.10, metric="dbg"):
+    geo, dump, cold = arms["warm_geo"], arms["warm_dumpall"], arms["cold"]
+    m = metric.upper()
+    # Primary contrast: warm_geo vs cold if warm_geo ran, else warm_dumpall vs cold.
+    if geo["n"] > 0:
+        warm, p_primary, label = geo, pw["B_vs_C"], "warm_geo"
+    else:
+        warm, p_primary, label = dump, pw["A_vs_C"], "warm_dumpall"
+    if warm["n"] == 0 or cold["n"] == 0:
+        return f"INCONCLUSIVE ({m}): missing arm (warm n={warm['n']}, cold n={cold['n']})."
+    if warm["success_rate"] > cold["success_rate"] and p_primary < alpha:
+        return (f"H1 reproduced ({m}, pre-registered alpha={alpha}): {label} "
+                f"{warm['success_rate']:.2f} > cold {cold['success_rate']:.2f}, "
+                f"Fisher p={p_primary:.4f} < {alpha}.")
+    return (f"H0 (null, {m}, alpha={alpha}): {label} {warm['success_rate']:.2f} vs "
+            f"cold {cold['success_rate']:.2f}, Fisher p={p_primary:.4f} (not < {alpha}).")
 
 
 def main():
@@ -88,9 +92,11 @@ def main():
     ap.add_argument("--root", required=True)
     ap.add_argument("--heldout", required=True, help="comma-separated task ids, e.g. 3,6,8")
     ap.add_argument("--prefix", default="spatial")
+    ap.add_argument("--metric", choices=("dbg", "val"), default="dbg")
+    ap.add_argument("--alpha", type=float, default=0.10)
     args = ap.parse_args()
     heldout = args.heldout.split(",")
-    rep = build_tiling_report(args.root, heldout, args.prefix)
+    rep = build_tiling_report(args.root, heldout, args.prefix, args.metric, args.alpha)
     (Path(args.root) / "results.json").write_text(json.dumps(rep, indent=1))
     for arm in ARMS:
         a = rep["arms"][arm]
