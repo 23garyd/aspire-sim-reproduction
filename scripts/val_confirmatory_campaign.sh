@@ -58,7 +58,7 @@ else
   # probe fresh libero_10 tasks (cold only) into the confirmatory root
   env -u ANTHROPIC_API_KEY python3 "$PAR" --root "$ROOT" --suite libero_10 \
     --tasks "$(IFS=,; echo "${FRESH_10[*]}")" --arms cold --reps "$PROBE_REPS" \
-    --t "$TEST_T" --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs 4
+    --t "$TEST_T" --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs 2
   # build candidates JSON (reused + freshly probed)
   cand="$ROOT/candidates.json"
   {
@@ -87,9 +87,19 @@ else
     pfx=$([ "$suite" = libero_spatial ] && echo spatial || echo 10)
     ids=$(python3 -c "import json,sys; pfx='$pfx'; print(','.join(t.split('_',1)[1] for t in json.load(open('$ROOT/selected_tasks.json')) if t.startswith(pfx+'_')))")
     [ -z "$ids" ] && continue
-    env -u ANTHROPIC_API_KEY python3 "$PAR" --root "$ROOT" --suite "$suite" \
-      --tasks "$ids" --arms warm_dumpall,cold --reps "$TEST_REPS" --t "$TEST_T" \
-      --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs 4
+    # jobs=2 (the subscription rate-limits above ~2 concurrent claude -p); retry on the
+    # parallel runner's circuit breaker (rc=3) with a cooldown so a burst self-heals.
+    tries=0
+    while true; do
+      env -u ANTHROPIC_API_KEY python3 "$PAR" --root "$ROOT" --suite "$suite" \
+        --tasks "$ids" --arms warm_dumpall,cold --reps "$TEST_REPS" --t "$TEST_T" \
+        --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs 2
+      rc=$?
+      if [ "$rc" -eq 3 ] && [ "$tries" -lt 8 ]; then
+        tries=$((tries + 1)); echo "[wrapper] circuit breaker on $suite; cooldown 300s, resume ($tries/8)"; sleep 300; continue
+      fi
+      break
+    done
   done
 fi
 
