@@ -201,10 +201,12 @@ def run_cell(cell, dry=False):
     env = dict(os.environ, MUJOCO_GL="egl",
                PATH=f"{Path.home()}/.local/bin:{os.environ.get('PATH', '')}", **extra)
     # Planner cost control: force the claude CLI onto the claude.ai
-    # subscription login, never per-token API billing (see 2026-07-25 incident:
+    # subscription login by default, never per-token API billing (see 2026-07-25 incident:
     # inherited ANTHROPIC_API_KEY hit rate limits and failed 11 cells at once).
-    env.pop("ANTHROPIC_API_KEY", None)
-    env.pop("ANTHROPIC_AUTH_TOKEN", None)
+    # ASPIRE_USE_API=1 opts back into API billing for a run the subscription cap can't finish.
+    if not os.environ.get("ASPIRE_USE_API"):
+        env.pop("ANTHROPIC_API_KEY", None)
+        env.pop("ANTHROPIC_AUTH_TOKEN", None)
     capxcmd = f"{VENV} {CAPX} --workdir /home/demo/cap-x --config-path {cfg}"
     cmd = ["python3", "-m", "aspire.run",
            "--task-dir", str(cell["task"]), "--engine", "capx",

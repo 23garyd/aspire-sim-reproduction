@@ -16,6 +16,10 @@ RUNS="$REPO/runs/2026-07-26-val-confirmatory"
 ROOT=${ROOT:-$HOME/aspire_runs/libero_val_confirm}
 DRY=${DRY:-0}
 VAL_SEEDS="200-204"; TEST_T="2"; PROBE_REPS=5; TEST_REPS=10
+# Billing: subscription by default (strip API key); ASPIRE_USE_API=1 keeps the key + tells
+# the parallel runner to keep it too, for a run the subscription rate-cap can't finish.
+JOBS=${JOBS:-2}
+if [ -n "${ASPIRE_USE_API:-}" ]; then BILLENV="env ASPIRE_USE_API=1"; else BILLENV="env -u ANTHROPIC_API_KEY"; fi
 FRESH_10=(1 2 4 5 7 8 9)                    # libero_10 tasks never tested warm-vs-cold
 REUSE_SPATIAL=(3 6 8); REUSE_10=(0 3 6)     # cold data reused from prior t=2 campaigns
 mkdir -p "$ROOT"
@@ -56,9 +60,9 @@ if [ "$DRY" = 1 ]; then
   echo "[dry] apply val_confirmatory_select.py -> selected_tasks.json + selection.md; gate >=2 or stop"
 else
   # probe fresh libero_10 tasks (cold only) into the confirmatory root
-  env -u ANTHROPIC_API_KEY python3 "$PAR" --root "$ROOT" --suite libero_10 \
+  $BILLENV python3 "$PAR" --root "$ROOT" --suite libero_10 \
     --tasks "$(IFS=,; echo "${FRESH_10[*]}")" --arms cold --reps "$PROBE_REPS" \
-    --t "$TEST_T" --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs 2
+    --t "$TEST_T" --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs "$JOBS"
   # build candidates JSON (reused + freshly probed)
   cand="$ROOT/candidates.json"
   {
@@ -91,9 +95,9 @@ else
     # parallel runner's circuit breaker (rc=3) with a cooldown so a burst self-heals.
     tries=0
     while true; do
-      env -u ANTHROPIC_API_KEY python3 "$PAR" --root "$ROOT" --suite "$suite" \
+      $BILLENV python3 "$PAR" --root "$ROOT" --suite "$suite" \
         --tasks "$ids" --arms warm_dumpall,cold --reps "$TEST_REPS" --t "$TEST_T" \
-        --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs 2
+        --s-val "$VAL_SEEDS" --library "$LIB" --no-analyze --jobs "$JOBS"
       rc=$?
       if [ "$rc" -eq 3 ] && [ "$tries" -lt 8 ]; then
         tries=$((tries + 1)); echo "[wrapper] circuit breaker on $suite; cooldown 300s, resume ($tries/8)"; sleep 300; continue
