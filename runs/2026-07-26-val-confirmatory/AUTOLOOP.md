@@ -19,8 +19,8 @@ result. Selection gate: >=2 overfit-band tasks or stop (honest null of selection
 - Ping user ONLY at terminal with ACTUAL val Fisher p.
 
 ## State machine
-STATE: RUNNING (resume bx13hvb9s, jobs=2 + cooldown-retry after breaker stall). Selection valid (spatial_6,10_0,10_2). Phase 2 resuming.
-NEXT: on completion -> pre-registered val p<0.05 decision (pooled 3 tasks) -> FINDINGS + commit -> PING
+STATE: BLOCKED on persistent subscription rate-limit. Resume bx13hvb9s exhausted all 8 cooldown-retries on BOTH suites; a duplicate runner (420169, not launched by me) + ~20 leaked api-server holders were killed/cleaned. Single claude -p works (SUBOK) but sustained/concurrent load trips the Max rolling cap. AWAITING USER billing decision: wait-and-resume-on-subscription (free/slow) vs API-fallback (costs) vs jobs=1. Loop STOPPED. Partial data preserved (idempotent).
+NEXT: on user decision -> resume scripts/val_confirmatory_campaign.sh (idempotent). Progress: spatial_6 warm_dumpall 6/10 (3 val) cold 5/10 (1 val); 10_0/10_2 warm not started.
 
 ## Decision log
 - 2026-07-26: val primary (seeds 200-204), overfit-band selection on broad pool
