@@ -19,8 +19,8 @@ result. Selection gate: >=2 overfit-band tasks or stop (honest null of selection
 - Ping user ONLY at terminal with ACTUAL val Fisher p.
 
 ## State machine
-STATE: BLOCKED on persistent subscription rate-limit. Resume bx13hvb9s exhausted all 8 cooldown-retries on BOTH suites; a duplicate runner (420169, not launched by me) + ~20 leaked api-server holders were killed/cleaned. Single claude -p works (SUBOK) but sustained/concurrent load trips the Max rolling cap. AWAITING USER billing decision: wait-and-resume-on-subscription (free/slow) vs API-fallback (costs) vs jobs=1. Loop STOPPED. Partial data preserved (idempotent).
-NEXT: on user decision -> resume scripts/val_confirmatory_campaign.sh (idempotent). Progress: spatial_6 warm_dumpall 6/10 (3 val) cold 5/10 (1 val); 10_0/10_2 warm not started.
+STATE: RUNNING on API fallback (user-approved) as bash bo3lbiglh, ASPIRE_USE_API=1 JOBS=4. Was BLOCKED on subscription rate-limit; Resume bx13hvb9s exhausted all 8 cooldown-retries on BOTH suites; a duplicate runner (420169, not launched by me) + ~20 leaked api-server holders were killed/cleaned. Single claude -p works (SUBOK) but sustained/concurrent load trips the Max rolling cap. AWAITING USER billing decision: wait-and-resume-on-subscription (free/slow) vs API-fallback (costs) vs jobs=1. Loop STOPPED. Partial data preserved (idempotent).
+NEXT: on completion -> pre-registered val decision (pooled 3 tasks, p<0.05) -> FINDINGS + commit -> PING. Resume progress base: spatial_6 warm_dumpall 6/10 (3 val) cold 5/10 (1 val); 10_0/10_2 warm not started. API not subscription-rate-capped; jobs=4.
 
 ## Decision log
 - 2026-07-26: val primary (seeds 200-204), overfit-band selection on broad pool
