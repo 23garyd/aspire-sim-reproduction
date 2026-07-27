@@ -19,8 +19,8 @@ result. Selection gate: >=2 overfit-band tasks or stop (honest null of selection
 - Ping user ONLY at terminal with ACTUAL val Fisher p.
 
 ## State machine
-STATE: RUNNING (build done 344 green, commits 97b66c8..025ebce; pre-launch OK: robosuite 1.4, lib 8 skills, subscription SUBOK, dry clean)
-NEXT: on completion -> apply pre-registered val p<0.05 decision -> FINDINGS + commit -> PING
+STATE: RUNNING (resume bx13hvb9s, jobs=2 + cooldown-retry after breaker stall). Selection valid (spatial_6,10_0,10_2). Phase 2 resuming.
+NEXT: on completion -> pre-registered val p<0.05 decision (pooled 3 tasks) -> FINDINGS + commit -> PING
 
 ## Decision log
 - 2026-07-26: val primary (seeds 200-204), overfit-band selection on broad pool
@@ -28,3 +28,7 @@ NEXT: on completion -> apply pre-registered val p<0.05 decision -> FINDINGS + co
 
 ## Attempt log
 - launched 2026-07-26; PREREG frozen at 025ebce (before any test run); root=~/aspire_runs/libero_val_confirm
+- STALL 1: first run (bldbckodd) tripped the parallel circuit breaker (3 consecutive planner-fails,
+  subscription rate-limit burst at --jobs 4) mid-Phase-2; partial analysis in campaign.log is INVALID.
+  Subscription verified healthy (transient). FIX: --jobs 4->2 + cooldown-retry on rc=3. Cleaned orphaned
+  holders. Selection was already valid (gate passed): spatial_6, 10_0, 10_2. RESUMED as bash bx13hvb9s.
