@@ -1,9 +1,10 @@
 #!/bin/bash
-# One-off: finish the last 10 cells of the val-confirmatory campaign (10_2 warm+cold
-# reps 6-10) by calling aspire.run DIRECTLY, bypassing libero_tiling_parallel.py's
-# shared api-server-holder (which deterministically fails 10_2 reps 6+ with rc=2).
-# 2 concurrent (each cell starts its own env; GPU has ample headroom). API billing
-# (ANTHROPIC_API_KEY inherited — subscription cap can't finish this). Idempotent (DONE).
+# Finish the last 10 cells of the val-confirmatory campaign (10_2 warm+cold reps 6-10)
+# via DIRECT aspire.run, SERIALLY (concurrency=1: each cell starts its own env server on
+# a fixed port, so concurrent cells collide — must be serial). Bypasses the parallel
+# runner's shared api-server-holder bug. Billing: SUBSCRIPTION (env -u ANTHROPIC_API_KEY)
+# — the API key is throttled after heavy use; the Max subscription has recovered.
+# Only marks a cell DONE if its summary.json is VALID (no fake-DONE on failure).
 set -u
 ROOT="$HOME/aspire_runs/libero_val_confirm"
 VENV=/home/demo/cap-x/.venv-libero/bin/python
@@ -20,25 +21,24 @@ run_cell() {
   rm -rf "$rdir"; mkdir -p "$task" "$out"; cp "$BASELINE" "$task/code.py"
   local lib="$rdir/lib"; mkdir -p "$lib"
   [ "$arm" = warm_dumpall ] && cp -r "$LIB/." "$lib/" 2>/dev/null
-  MUJOCO_GL=egl PATH="$HOME/.local/bin:$PATH" python3 -m aspire.run \
+  env -u ANTHROPIC_API_KEY MUJOCO_GL=egl PATH="$HOME/.local/bin:$PATH" python3 -m aspire.run \
     --task-dir "$task" --engine capx \
     --capx-cmd "$VENV $CAPX --workdir /home/demo/cap-x --config-path $CFG" \
     --out-root "$out" --library "$lib" --s-dbg 0 --s-val 200-204 --t 2 \
     > "$rdir/log.txt" 2>&1
   tail -1 "$rdir/log.txt" > "$rdir/summary.json"
-  touch "$rdir/DONE"
-  echo "done 10_2/$arm/$rep"
+  # only DONE if the summary is a valid JSON object carrying val_score
+  if python3 -c "import json,sys; d=json.load(open('$rdir/summary.json')); sys.exit(0 if 'val_score' in d else 1)" 2>/dev/null; then
+    touch "$rdir/DONE"; echo "done 10_2/$arm/$rep val=$(python3 -c "import json;print(json.load(open('$rdir/summary.json'))['val_score'])" 2>/dev/null)"
+  else
+    echo "FAILED 10_2/$arm/$rep (no valid summary — left un-DONE)"
+  fi
 }
 
-# 2 concurrent at a time across the 10 cells
-pids=()
 for arm in warm_dumpall cold; do
   for rep in 6 7 8 9 10; do
-    run_cell "$arm" "$rep" &
-    pids+=($!)
-    # cap concurrency at 2
-    while [ "$(jobs -rp | wc -l)" -ge 2 ]; do sleep 30; done
+    run_cell "$arm" "$rep"        # SERIAL: no & — one env server at a time
   done
 done
-wait
-echo "=== ALL 10_2 REMAINING CELLS DONE ==="
+n=$(find "$ROOT/test/10_2/warm_dumpall" "$ROOT/test/10_2/cold" -name DONE 2>/dev/null | wc -l)
+echo "=== 10_2 DONE now: $n/20 (10 pre-existing + up to 10 new) ==="

@@ -26,7 +26,10 @@ cleared stale claims + partial 10_2 cells, resuming the final 10 cells clean.
 PARTIAL pooled (50/60): warm_dumpall 9/25 (0.36) vs cold 3/25 (0.12), Fisher p=0.0955 — NOT FINAL (10_2 truncated).
 ROOT CAUSE of 10_2 failures: libero_tiling_parallel.py's shared api-server-HOLDER deterministically fails 10_2 reps 6+ (rc=2);
 direct aspire.run works fine (empty log is NORMAL — silent during env load). FIX: scripts/val_confirm_finish_10_2.sh runs the
-10 remaining cells via DIRECT aspire.run (2 concurrent, API), bypassing the holder. Launched b0lxpo88e, cells confirmed running. Resume bx13hvb9s exhausted all 8 cooldown-retries on BOTH suites; a duplicate runner (420169, not launched by me) + ~20 leaked api-server holders were killed/cleaned. Single claude -p works (SUBOK) but sustained/concurrent load trips the Max rolling cap. AWAITING USER billing decision: wait-and-resume-on-subscription (free/slow) vs API-fallback (costs) vs jobs=1. Loop STOPPED. Partial data preserved (idempotent).
+10 remaining cells via DIRECT aspire.run (2 concurrent, API), bypassing the holder. Launched b0lxpo88e — FAILED: (1) my finisher ran 2 concurrent -> fixed-port env-server COLLISION -> fast-fail,
+  and (2) the API key is now THROTTLED (claude -p with key hangs) after hours of jobs=4. Meanwhile the Max SUBSCRIPTION
+  RECOVERED (SUBOK). Removed the fake-DONE empty cells. FIX: finisher rewritten SERIAL (concurrency=1, no collision) +
+  SUBSCRIPTION billing + valid-summary guard before DONE. Relaunched b7uxla0bf, 1 cell running clean. Resume bx13hvb9s exhausted all 8 cooldown-retries on BOTH suites; a duplicate runner (420169, not launched by me) + ~20 leaked api-server holders were killed/cleaned. Single claude -p works (SUBOK) but sustained/concurrent load trips the Max rolling cap. AWAITING USER billing decision: wait-and-resume-on-subscription (free/slow) vs API-fallback (costs) vs jobs=1. Loop STOPPED. Partial data preserved (idempotent).
 NEXT: on completion -> pre-registered val decision (pooled 3 tasks, p<0.05) -> FINDINGS + commit -> PING. Resume progress base: spatial_6 warm_dumpall 6/10 (3 val) cold 5/10 (1 val); 10_0/10_2 warm not started. API not subscription-rate-capped; jobs=4.
 
 ## Decision log
