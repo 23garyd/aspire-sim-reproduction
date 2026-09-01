@@ -12,7 +12,7 @@ sibling tracks, real robots.
 |-------|------------|--------|
 | **LIBERO sim reproduction** | The ASPIRE skill-accumulation study in simulation (LIBERO tasks via cap-x). *This repo's active focus.* | **Active** |
 | **B601 real arm** | The same ASPIRE pipeline deployed on a physical reBot B601-RS arm (milestones M3a–M3d). Software built + CI-proven; on-bench live runs pending. | Separate repo: [`aspire-robot-B601`](https://github.com/23garyd/aspire-robot-B601) |
-| **AgiBot A2 humanoid** | An earlier robot-execution layer (`robot_engine/`, `examples/`) for a 26-joint bimanual humanoid sim. | **Shelved** |
+| **AgiBot A2 humanoid** | An earlier robot-execution layer for a 26-joint bimanual humanoid sim. Removed from this branch; code preserved on branch [`aspire_a2_sim`](../../tree/aspire_a2_sim). | **Shelved** |
 
 ## The sim reproduction — honest findings so far
 
@@ -46,7 +46,6 @@ not a debug-solve benefit — strong post-hoc evidence, a not-yet-closed pre-reg
 | `runs/` | Per-campaign specs, results, `FINDINGS.md`, and `VAL-REANALYSIS.md`. |
 | `docs/superpowers/` | Design specs and implementation plans for each campaign. |
 | `robot_b601/`, `scripts/b601_*` | B601 hardware track (also mirrored to the B601 repo). |
-| `robot_engine/`, `examples/` | Shelved AgiBot A2 execution layer. |
 | `tests/` | Unit tests. Run anywhere — no robot/GPU/credits needed. |
 
 ## Running
@@ -60,5 +59,13 @@ python3 scripts/reanalyze_val.py
 ```
 
 LIBERO campaigns run through cap-x's **`.venv-libero`** (robosuite 1.4.0), `MUJOCO_GL=egl`;
-campaign data lives outside the repo under `~/aspire_runs/`. Deep status and continuation
-notes are in `.project_notes/CLAUDE_HANDOFF.md`.
+campaign data lives outside the repo under `~/aspire_runs/`. Per-campaign specs, results and
+`FINDINGS.md` are under `runs/`; design specs and plans are under `docs/superpowers/`.
+
+## License
+
+Licensed under the Apache License, Version 2.0 — see [`LICENSE`](LICENSE).
+
+This repo reimplements the ASPIRE layer described in arXiv 2607.00272 (NVIDIA GEAR); the
+paper itself is not redistributed here. It runs on top of [CaP-X](https://github.com/capgym/cap-x)
+(MIT), which is not vendored — install it separately.
