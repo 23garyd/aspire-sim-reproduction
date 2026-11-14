@@ -1,0 +1,214 @@
+{
+ "arms": {
+  "warm_geo": {
+   "n": 0,
+   "n_solved": 0,
+   "success_rate": 0.0,
+   "mean_attempts_solved_only": null
+  },
+  "warm_dumpall": {
+   "n": 10,
+   "n_solved": 4,
+   "success_rate": 0.4,
+   "mean_attempts_solved_only": 2.25
+  },
+  "cold": {
+   "n": 10,
+   "n_solved": 1,
+   "success_rate": 0.1,
+   "mean_attempts_solved_only": 2.0
+  }
+ },
+ "pairwise": {
+  "B_vs_C": 1.0,
+  "B_vs_A": 1.0,
+  "A_vs_C": 0.30340557275541796
+ },
+ "by_task": {
+  "spatial_6": {
+   "warm_geo": {
+    "n": 0,
+    "n_solved": 0,
+    "success_rate": 0.0,
+    "mean_attempts_solved_only": null
+   },
+   "warm_dumpall": {
+    "n": 10,
+    "n_solved": 4,
+    "success_rate": 0.4,
+    "mean_attempts_solved_only": 2.25
+   },
+   "cold": {
+    "n": 10,
+    "n_solved": 1,
+    "success_rate": 0.1,
+    "mean_attempts_solved_only": 2.0
+   }
+  }
+ },
+ "rows": [
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 3,
+   "val_score": 1.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": null,
+   "val_score": 0.0,
+   "dbg_score": 0.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2,
+   "val_score": 0.6,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": 3,
+   "val_score": 0.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2,
+   "val_score": 1.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.4,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.2,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": false,
+   "attempts": 4,
+   "val_score": 0.4,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "warm_dumpall",
+   "solved": true,
+   "attempts": 2,
+   "val_score": 0.6,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": null,
+   "val_score": 0.0,
+   "dbg_score": 0.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": null,
+   "val_score": 0.0,
+   "dbg_score": 0.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": null,
+   "val_score": 0.0,
+   "dbg_score": 0.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": true,
+   "attempts": 2,
+   "val_score": 1.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.2,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": null,
+   "val_score": 0.0,
+   "dbg_score": 0.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.2,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": 2,
+   "val_score": 0.0,
+   "dbg_score": 1.0
+  },
+  {
+   "task": "spatial_6",
+   "arm": "cold",
+   "solved": false,
+   "attempts": 3,
+   "val_score": 0.0,
+   "dbg_score": 1.0
+  }
+ ],
+ "metric": "val",
+ "alpha": 0.05,
+ "verdict": "H0 (null, VAL, alpha=0.05): warm_dumpall 0.40 vs cold 0.10, Fisher p=0.3034 (not < 0.05)."
+}
