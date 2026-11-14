@@ -1,5 +1,7 @@
 # aspire-robot-engine
 
+当前实现的技术入口、附件与核验记录见 [技术证据索引](docs/evidence/oct-m3/README.md)。
+
 Reproduction study of the **ASPIRE** architecture's *skill-accumulation* claim — does an
 agent that banks reusable skills from earlier tasks measurably solve later, held-out tasks
 better? The `aspire/` package (coordinator → actor → evosearch → skill library, with
