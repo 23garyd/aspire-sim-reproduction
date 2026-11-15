@@ -1,0 +1,3 @@
+# Skill index
+
+- [seat-at-resting-height-not-target-center](manipulation/seat-at-resting-height-not-target-center.md) — manipulation: Placements where the manipulated object ultimately rests on the same support surface it started from (drop-onto-peg, insertion, stacking onto a table-supported base) and get_object_pose returns a body-center z that sits above that surface. Signal: grasp/lift verified good, placement command constant across seeds, marginal physics outcome (some seeds barely rest, others fall). Do NOT apply when the target's reported z genuinely is the intended seating height (e.g. placing INTO a container whose reported center is the drop point).
