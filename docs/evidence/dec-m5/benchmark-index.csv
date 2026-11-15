@@ -1,4 +1,4 @@
 track,recorded_result,source_path,boundary
-ASPIRE held-out 分析,事后证据,../../../runs/VAL-REANALYSIS.md,不等于预注册确认完成
-ASPIRE 确认性实验,INCOMPLETE,../nov-m4/confirmatory/audit.json,历史50/60；现存48 JSON+2错误+10缺摘要
-完整运行原始目录,未归档,../nov-m4/confirmatory/source-inventory.csv,这里仅收集选择任务摘要，非全部 exec 文件
+ASPIRE held-out analysis,Post-hoc evidence,../../../runs/VAL-REANALYSIS.md,Does not establish completion of preregistered confirmation
+ASPIRE confirmatory experiment,INCOMPLETE,../nov-m4/confirmatory/audit.json,Historical 50/60; 48 JSON+2 errors+10 missing summaries retained
+Complete original run directories,Not archived,../nov-m4/confirmatory/source-inventory.csv,Only selected-task summaries are collected here; not all exec files

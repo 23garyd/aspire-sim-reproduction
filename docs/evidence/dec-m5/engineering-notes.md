@@ -1,10 +1,10 @@
-# 技能积累研究的技术建议与后续工程项
+# Technical Recommendations and Follow-up Work for Skill Accumulation
 
-依据：[验证集分析](../../../runs/VAL-REANALYSIS.md)、[预注册](../../../runs/2026-07-26-val-confirmatory/PREREGISTRATION.md)、[已恢复单元审计](../nov-m4/confirmatory/audit.json)。
+Sources: [validation analysis](../../../runs/VAL-REANALYSIS.md), [preregistration](../../../runs/2026-07-26-val-confirmatory/PREREGISTRATION.md), [recovered-cell audit](../nov-m4/confirmatory/audit.json).
 
-- 区分 debug-seed 求解与 held-out 泛化；在预注册指标和任务选择固定后再解释效果。
-- 检索策略可能造成负迁移，技能累积的数量不能代替按任务的结果分析。ASPIRE 与固定策略 HarnessVLA 的证据和分母分开处理。
-- 原确认性实验没有闭合：历史记为 50/60，现存摘要为 48 份 JSON、2 份错误文本及 10 格缺失。不能以删除错误文件、缩小分母的方式把它变成最终肯定结论。
-- 对并发环境服务记录进程与端口归属；分析前确认 summary 与真实运行状态匹配。所选 dry-run 软件检查依赖 Linux /proc。
+- Distinguish debug-seed solving from held-out generalization; interpret effects after fixing preregistered metrics and task selection.
+- Retrieval can cause negative transfer. Skill counts do not replace per-task result analysis. Keep ASPIRE and frozen-policy HarnessVLA evidence and denominators separate.
+- The original confirmatory experiment remains incomplete: historically 50/60, with 48 JSON summaries, 2 error texts and 10 missing cells retained. Dropping error files or shrinking the denominator cannot turn this into a final positive conclusion.
+- Record process and port ownership for concurrent environment services. Confirm that summaries match actual run status before analysis. The selected dry-run software check depends on Linux /proc.
 
-后续工程：经负责人决定后再继续尚缺的实验单元；保留错误单元和预注册处理规则；固定 cap-x、模型标识和运行环境后验证复现；将大体量 campaign 输入输出放入可取回存储。此次整理未启动任何模型或补跑任务。
+Follow-up work: continue missing cells only after the responsible owner decides; retain error cells and preregistered handling rules; pin cap-x, model identifiers and runtime environment for reproduction; place large campaign inputs and outputs in retrievable storage. This packaging update did not start models or rerun tasks.
