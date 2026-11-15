@@ -1,9 +1,9 @@
 path,bytes,sha256,source
-README.md,1791,f0320ff84c0e029bf98800097697acf0913dfa9181d85bc56a7342c3857e0675,2026-11-14 技术整理，未新增实机或模型实验
-archive-manifest.csv,128172,d1eff16cfd8b42ad7d437947df7367cde76f5e6a7646a18dc49471b628c38309,源提交 ccb4a32e2e30e696971f6ee3c3214695d21f10d0 中全部已跟踪文件的逐字节归档索引
-benchmark-index.csv,395,c7e01a90ba3769d3fdda5096d9b52233e73f8cf445dbefa2a454473ee1ef7b40,2026-11-14 技术整理，未新增实机或模型实验
-engineering-notes.md,1179,62cf72e13b989f0c41418e5be3d9ec69b4e2a41c27d1a78ccd552bd53119446a,2026-11-14 技术整理，未新增实机或模型实验
-implementation-commits.csv,1057,53cac8f7077776317fd95538a102286655b189be6fb062f24ed3d596d1a8d57d,2026-11-14 技术整理，未新增实机或模型实验
-pending-assets.csv,316,b498e2955e81b87530eb0806ed793d77343addc5e2f850217326cad53167dafa,2026-11-14 技术整理，未新增实机或模型实验
-provenance.json,271,3c975f61184c230ebb784bc2e1f264c272ea8310830b2f3c2ed0b9a797535c36,2026-11-14 技术整理，未新增实机或模型实验
-reproduce.md,1715,88df4238034a48ba93e8a13c1be865d4c20d30e3f8cf19e5c04000c436a57eae,2026-11-14 技术整理，未新增实机或模型实验
+README.md,1791,f0320ff84c0e029bf98800097697acf0913dfa9181d85bc56a7342c3857e0675,Technical packaging on 2026-11-14; no new hardware or model experiments
+archive-manifest.csv,128172,5acf07cc86c8ad5dd8c563f9c5b5cd4c0a464ae1694d5648279253521f5298d3,Byte-level archive index of all tracked files at source commit ccb4a32e2e30e696971f6ee3c3214695d21f10d0
+benchmark-index.csv,478,2e70f0bbf44b915e33a5d284a7bdc77019ecf24956bc21d7b40e466c37660a19,Technical packaging on 2026-11-14; no new hardware or model experiments
+engineering-notes.md,1360,9694bedde492d901cb1eee5c2ec6ffb8bbe912edbdea3aaac6a8e7ebb02ef8c6,Technical packaging on 2026-11-14; no new hardware or model experiments
+implementation-commits.csv,1075,54291c0e2a64b28b677eefbcb3cbd83d4d940bacd5b242000c4f68c9bb11651e,Technical packaging on 2026-11-14; no new hardware or model experiments
+pending-assets.csv,384,22c0fd10c6612a54e6311e4f39f6e2fa9d1bf0184424aa4be044404bab55fb0c,Technical packaging on 2026-11-14; no new hardware or model experiments
+provenance.json,271,3c975f61184c230ebb784bc2e1f264c272ea8310830b2f3c2ed0b9a797535c36,Technical packaging on 2026-11-14; no new hardware or model experiments
+reproduce.md,1959,9032d24b1c9bb81851dacf3b33dc4b8f2dcf7c3b2b20fe1c7ccabf94a63e32c6,Technical packaging on 2026-11-14; no new hardware or model experiments
