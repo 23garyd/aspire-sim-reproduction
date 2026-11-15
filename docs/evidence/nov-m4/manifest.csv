@@ -1,5 +1,5 @@
 path,bytes,sha256,source
-README.md,2514,3d6ffa14b64a309cae0ced33eb7ca1cf99d423621fa409f52ee04313c146f9fe,2026-11-14 技术整理，未新增实机或模型实验
+README.md,2962,3847302165f6e817a02203d81b89d06fadfdc7a36a38d93196e32d11f8b4a933,2026-11-14 技术整理，未新增实机或模型实验
 confirmatory/audit.json,622,4ae70e9dc00768b9d43f0ddf8cb6d060c9f833168300b7cacb90ceb18c958eac,EPYC 原确认性实验摘要；无效和缺失单元另列审计
 confirmatory/cell-audit.csv,7139,f17de8322e3bda9eebca607d3496a10b47149dd48b606442c000dd93abad1788,EPYC 原确认性实验摘要；无效和缺失单元另列审计
 confirmatory/results.json,3668,432851eb21d07d37d9a748e4ceab8a88d614e22e992c45b592ff46a4249d3b38,EPYC 原确认性实验摘要；无效和缺失单元另列审计
