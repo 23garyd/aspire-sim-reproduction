@@ -1,0 +1,114 @@
+{
+ "selected": [
+  "spatial_6",
+  "10_0",
+  "10_2"
+ ],
+ "audit": [
+  {
+   "task": "spatial_3",
+   "suite": "libero_spatial",
+   "cold_dbg_rate": 1.0,
+   "cold_val_rate": 0.4,
+   "keep": false,
+   "reason": "ceiling (val 0.40>0.2)"
+  },
+  {
+   "task": "spatial_6",
+   "suite": "libero_spatial",
+   "cold_dbg_rate": 1.0,
+   "cold_val_rate": 0.0,
+   "keep": true,
+   "reason": "overfit band (dbg 1.00>=0.6, val 0.00<=0.2)"
+  },
+  {
+   "task": "spatial_8",
+   "suite": "libero_spatial",
+   "cold_dbg_rate": 0.8,
+   "cold_val_rate": 0.8,
+   "keep": false,
+   "reason": "ceiling (val 0.80>0.2)"
+  },
+  {
+   "task": "10_0",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.9,
+   "cold_val_rate": 0.1,
+   "keep": true,
+   "reason": "overfit band (dbg 0.90>=0.6, val 0.10<=0.2)"
+  },
+  {
+   "task": "10_3",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.2,
+   "cold_val_rate": 0.1,
+   "keep": false,
+   "reason": "floor (dbg 0.20<0.6)"
+  },
+  {
+   "task": "10_6",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.1,
+   "cold_val_rate": 0.0,
+   "keep": false,
+   "reason": "floor (dbg 0.10<0.6)"
+  },
+  {
+   "task": "10_1",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.2,
+   "cold_val_rate": 0.2,
+   "keep": false,
+   "reason": "floor (dbg 0.20<0.6)"
+  },
+  {
+   "task": "10_2",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.6,
+   "cold_val_rate": 0.0,
+   "keep": true,
+   "reason": "overfit band (dbg 0.60>=0.6, val 0.00<=0.2)"
+  },
+  {
+   "task": "10_4",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.2,
+   "cold_val_rate": 0.0,
+   "keep": false,
+   "reason": "floor (dbg 0.20<0.6)"
+  },
+  {
+   "task": "10_5",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.0,
+   "cold_val_rate": 0.0,
+   "keep": false,
+   "reason": "floor (dbg 0.00<0.6)"
+  },
+  {
+   "task": "10_7",
+   "suite": "libero_10",
+   "cold_dbg_rate": 1.0,
+   "cold_val_rate": 0.8,
+   "keep": false,
+   "reason": "ceiling (val 0.80>0.2)"
+  },
+  {
+   "task": "10_8",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.0,
+   "cold_val_rate": 0.0,
+   "keep": false,
+   "reason": "floor (dbg 0.00<0.6)"
+  },
+  {
+   "task": "10_9",
+   "suite": "libero_10",
+   "cold_dbg_rate": 0.0,
+   "cold_val_rate": 0.0,
+   "keep": false,
+   "reason": "floor (dbg 0.00<0.6)"
+  }
+ ],
+ "sufficient": true
+}
