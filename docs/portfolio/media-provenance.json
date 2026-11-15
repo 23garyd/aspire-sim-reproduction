@@ -7,20 +7,21 @@
       "kind": "video",
       "path": "runs/2026-07-17-lift-repeats/clips/two_arm_lift_BEFORE_vs_AFTER_seed100.mp4",
       "sha256": "5b565c63456cd6d4837078010ecca5bcb92ff160e079d396a1022837a75269e1",
-      "caption": "双臂 lift 仿真对照，seed100、rep1 个案。左侧 baseline 未抬起锅，右侧所选程序抬起锅；这不是 B601 实机，也不能代表所有重复均成功。"
+      "caption": "Two-arm lift simulation, seed 100, rep1 example. The left baseline leaves the pot on the table; the selected program on the right lifts it. This is not B601 hardware and does not represent success across all repeats."
     },
     {
       "kind": "poster",
       "path": "docs/portfolio/assets/demo-poster.png",
       "derived_from": "runs/2026-07-17-lift-repeats/clips/two_arm_lift_BEFORE_vs_AFTER_seed100.mp4",
-      "extraction": "ffmpeg -ss 1.0 -i SOURCE -frames:v 1 OUTPUT；无生成画面或合成动作",
+      "extraction": "ffmpeg -ss 1.0 -i SOURCE -frames:v 1 OUTPUT; direct extraction, no generated imagery or synthetic actions",
       "sha256": "6d6e3de285afcf9a49b8be1c4c01b69887157817a657dd5b20239b31aedc9ae8"
     },
     {
       "kind": "explanatory_diagram",
       "path": "docs/portfolio/assets/architecture.svg",
-      "sha256": "d519f7d4162743a7cc35a5b1620fef73bc4d05b5a1eab3bb85f1507cea3f72a2",
-      "caption": "依当前代码边界绘制的软件结构示意，非实验画面或新增执行证据"
+      "sha256": "e24338dd036bf0fb3c9845d0a1e922dc02e3ce3fe9792a0ace1e93aea8d1117e",
+      "caption": "Software architecture illustration based on current code boundaries; not experimental footage or new execution evidence"
     }
-  ]
+  ],
+  "documentation_updated_at": "2026-11-14"
 }
