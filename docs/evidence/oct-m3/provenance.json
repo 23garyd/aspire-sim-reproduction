@@ -1,7 +1,7 @@
 {
   "implementation_commit": "a8c608fb10317a43d240047c726edbcb62a4d1ff",
   "prepared_on": "2026-11-14",
-  "verification_scope": "仅记录指定的无硬件测试子集；未新增实机、仿真、训练或模型调用",
-  "source_snapshot_date": "见各技术附件与原实验记录",
+  "verification_scope": "Records only the specified no-hardware test subset; no new hardware trials, simulation, training or model calls",
+  "source_snapshot_date": "See individual technical artifacts and original experiment records",
   "acceptance_report_included": false
 }

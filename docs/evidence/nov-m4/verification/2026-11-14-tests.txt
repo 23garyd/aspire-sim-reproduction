@@ -1,9 +1,9 @@
-核验日期：2026-11-14
-范围：November/December 技术证据整理所用无硬件测试子集，未新增实机试验、GPU rollout、训练或模型调用。
-环境：EPYC，cap-x .venv；所选 runner dry-run 检查需要 Linux /proc；macOS 上该检查不能运行
-命令：python -m pytest tests/aspire/test_val_confirmatory_analyzer.py tests/aspire/test_val_confirmatory_select.py tests/aspire/test_val_confirmatory_runner_dryrun.py tests/aspire/test_val_confirmatory_svalpass.py -q -p no:anyio
-退出码：0
-跳过项不计为通过；这些输出不证明干净机器重建或实体机器人安全演示完成。
+Verification date: 2026-11-14
+Scope: no-hardware test subset used for November/December evidence packaging; no new hardware trials, GPU rollouts, training or model calls.
+Environment: EPYC, cap-x .venv; the selected runner dry-run check requires Linux /proc and cannot run on macOS
+Command: python -m pytest tests/aspire/test_val_confirmatory_analyzer.py tests/aspire/test_val_confirmatory_select.py tests/aspire/test_val_confirmatory_runner_dryrun.py tests/aspire/test_val_confirmatory_svalpass.py -q -p no:anyio
+Exit code: 0
+Skipped tests are not counted as passed; this output does not establish completion of a clean-machine rebuild or a physical robot safety demonstration.
 
 ......                                                                   [100%]
 6 passed in 0.14s

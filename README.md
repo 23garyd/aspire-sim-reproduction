@@ -44,6 +44,8 @@ This repository does not demonstrate successful execution on physical B601 hardw
 
 ## Code Navigation and Verification
 
+For the complete guide and evidence map, see the [documentation index](docs/README.md).
+
 | Path | Contents |
 |---|---|
 | `aspire/` | Planning, execution, skill library and trace structures |

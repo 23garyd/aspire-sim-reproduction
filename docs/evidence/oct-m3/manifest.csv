@@ -1,9 +1,9 @@
 path,bytes,sha256,source
-README.md,2652,c2a64ee852070bed53012a889ee2b5c96b702604d369670948c75f0ece983081,技术整理：2026-11-14
-implementation-commits.csv,1092,5eb2af6b09f7bfb5b89d4d891809bd5647d2023730fbcf732b366447501c5d15,技术整理：2026-11-14
-provenance.json,328,054cd6cada1353c51054f582b18c8087dc8c8b549968629a7a60404671d2b4f2,技术整理：2026-11-14
-skills/curriculum/index.md,671,0da5f19200b713427eb3879c0d3dbbdc645e152aa5a57b1a5d69fdd2957d80af,EPYC 原技能库；原索引哈希与既有证据一致
-skills/curriculum/manipulation/seat-at-resting-height-not-target-center.md,2501,845ec054c3e2ce7f412c53fbdabc7796e0abb8e6f64b49786a22c916016a1f9b,EPYC 原技能库；原索引哈希与既有证据一致
-skills/m3x/engine-interaction/bounded-action-budget-guard.md,2610,e4b70b1f3f214d88f641b8ba14962fc80fd184555b6aa40007247ced6bd27fd0,EPYC 原技能库；原索引哈希与既有证据一致
-skills/m3x/index.md,497,28266d0a644f48fe69e1c3fd628193471d43b9295fa4ce91d5079e541cfd885f,EPYC 原技能库；原索引哈希与既有证据一致
-verification/2026-11-14-tests.txt,483,f87f49ff3606f467f1e8d98a0535dabe873ecd5c80e11bae4ab2444cb6d02fd5,2026-11-14 指定测试子集的真实输出
+README.md,2652,c2a64ee852070bed53012a889ee2b5c96b702604d369670948c75f0ece983081,Technical packaging: 2026-11-14
+implementation-commits.csv,1102,0025f96e2a8f0a293578bc82c439bd46c270abe0118ed12969d0fa9e5a95fd25,Technical packaging: 2026-11-14
+provenance.json,379,180c73557f0959c4cfd2238a1ed65af475a57a2873623978f732c9a1de68349e,Technical packaging: 2026-11-14
+skills/curriculum/index.md,671,0da5f19200b713427eb3879c0d3dbbdc645e152aa5a57b1a5d69fdd2957d80af,Original EPYC skill library; original index hashes match existing evidence
+skills/curriculum/manipulation/seat-at-resting-height-not-target-center.md,2501,845ec054c3e2ce7f412c53fbdabc7796e0abb8e6f64b49786a22c916016a1f9b,Original EPYC skill library; original index hashes match existing evidence
+skills/m3x/engine-interaction/bounded-action-budget-guard.md,2610,e4b70b1f3f214d88f641b8ba14962fc80fd184555b6aa40007247ced6bd27fd0,Original EPYC skill library; original index hashes match existing evidence
+skills/m3x/index.md,497,28266d0a644f48fe69e1c3fd628193471d43b9295fa4ce91d5079e541cfd885f,Original EPYC skill library; original index hashes match existing evidence
+verification/2026-11-14-tests.txt,506,d22100b071be39a4455aed4a5358299b9dab8c65c797854522db70857abca337,Original output of the specified test subset on 2026-11-14

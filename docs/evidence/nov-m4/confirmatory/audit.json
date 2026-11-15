@@ -5,7 +5,7 @@
     "invalid_summary": 2,
     "missing_summary": 10
   },
-  "historical_record": "AUTOLOOP与技术PDF记为50/60，未完成；此处48份可解析JSON、2份错误文本及10份缺失摘要是现存文件审计，不等于新增完成率或对历史统计的替代。",
-  "historical_root_results_json": "原results.json仅有spatial_6的20条记录，作为原始中间文件保留，不当作全任务最终汇总。",
-  "verdict": "INCOMPLETE：本次不重启模型、不补跑单元、不对48份有效JSON重新作最终假设检验"
+  "historical_record": "AUTOLOOP and the technical PDF record 50/60, incomplete; the 48 parseable JSON files, 2 error texts and 10 missing summaries here audit retained files, not a new completion rate or a replacement for historical statistics.",
+  "historical_root_results_json": "The original results.json has only 20 spatial_6 records; it is retained as an original intermediate file, not a final summary of all tasks.",
+  "verdict": "INCOMPLETE: no model restarts, missing-cell reruns or new final hypothesis tests on the 48 valid JSON files"
 }
